@@ -38,12 +38,6 @@ Application Django + React alignée sur les modules metier principaux de EDEN to
 
 ## Installation
 
-### 1. Cloner et ouvrir le projet
-
-```bash
-cd /home/brice-mboule/Documents/qualisys/opengrc
-```
-
 ### 2. Backend Django en local
 
 Creer un environnement virtuel puis installer les dependances:
@@ -84,14 +78,6 @@ Les principales variables backend:
 Variable frontend utile:
 
 - `VITE_API_URL`, par defaut `/api`
-
-## Migrations
-
-Les migrations ajoutees pour l'alignement EDEN:
-
-- [backend/apps/org/migrations/0002_site_facility.py](/home/brice-mboule/Documents/qualisys/opengrc/backend/apps/org/migrations/0002_site_facility.py)
-- [backend/apps/people/migrations/0002_contact_identity.py](/home/brice-mboule/Documents/qualisys/opengrc/backend/apps/people/migrations/0002_contact_identity.py)
-- [backend/apps/projects/migrations/0002_activity_task.py](/home/brice-mboule/Documents/qualisys/opengrc/backend/apps/projects/migrations/0002_activity_task.py)
 
 Execution:
 
