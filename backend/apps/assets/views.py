@@ -6,7 +6,7 @@ from .serializers import AssetTypeSerializer, AssetSerializer, AssignmentSeriali
 
 
 class AssetTypeViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = AssetType.objects.all()
+    queryset = AssetType.objects.select_related("organization").all()
     serializer_class = AssetTypeSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ["id", "code", "name", "title", "status"]
@@ -14,7 +14,7 @@ class AssetTypeViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelView
 
 
 class AssetViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = Asset.objects.all()
+    queryset = Asset.objects.select_related("organization", "asset_type").all()
     serializer_class = AssetSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ["id", "code", "name", "title", "status"]
@@ -22,7 +22,7 @@ class AssetViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet)
 
 
 class AssignmentViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = Assignment.objects.all()
+    queryset = Assignment.objects.select_related("organization", "asset", "assignee").all()
     serializer_class = AssignmentSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ["id", "code", "name", "title", "status"]

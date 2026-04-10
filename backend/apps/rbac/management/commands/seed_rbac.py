@@ -6,10 +6,18 @@ ROLE_CONFIG = {
     "super_admin": {"name": "Super Admin", "permissions": "__all__"},
     "platform_admin": {"name": "Platform Admin", "permissions": [
         "view_organization", "add_organization", "change_organization",
+        "view_organizationtype", "add_organizationtype", "change_organizationtype",
+        "view_officetype", "add_officetype", "change_officetype",
+        "view_facilitytype", "add_facilitytype", "change_facilitytype",
+        "view_site", "add_site", "change_site",
+        "view_facility", "add_facility", "change_facility",
         "view_project", "add_project", "change_project",
         "view_person", "add_person", "change_person",
     ]},
-    "viewer": {"name": "Viewer", "permissions": ["view_organization", "view_project", "view_person"]},
+    "viewer": {"name": "Viewer", "permissions": [
+        "view_organization", "view_organizationtype", "view_officetype", "view_facilitytype",
+        "view_site", "view_facility", "view_project", "view_person",
+    ]},
 }
 
 class Command(BaseCommand):

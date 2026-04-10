@@ -31,3 +31,36 @@ class FacilityPermission(ActionPermission):
         "partial_update": "org.change_facility",
         "destroy": "org.delete_facility",
     }
+
+
+class OrganizationTypePermission(ActionPermission):
+    permission_map = {
+        "list": "org.view_organizationtype",
+        "retrieve": "org.view_organizationtype",
+        "create": "org.add_organizationtype",
+        "update": "org.change_organizationtype",
+        "partial_update": "org.change_organizationtype",
+        "destroy": "org.delete_organizationtype",
+    }
+
+
+class OfficeTypePermission(ActionPermission):
+    permission_map = {
+        "list": "org.view_officetype",
+        "retrieve": "org.view_officetype",
+        "create": "org.add_officetype",
+        "update": "org.change_officetype",
+        "partial_update": "org.change_officetype",
+        "destroy": "org.delete_officetype",
+    }
+
+
+class FacilityTypePermission(ActionPermission):
+    permission_map = {
+        "list": "org.view_facilitytype",
+        "retrieve": "org.view_facilitytype",
+        "create": "org.add_facilitytype",
+        "update": "org.change_facilitytype",
+        "partial_update": "org.change_facilitytype",
+        "destroy": "org.delete_facilitytype",
+    }

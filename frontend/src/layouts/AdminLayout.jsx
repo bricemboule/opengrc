@@ -1,8 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import { LogOut } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { FiChevronDown, FiChevronRight, FiFolderPlus, FiList, FiMap, FiUpload } from "react-icons/fi";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAuth } from "../features/auth/authSlice";
-import { menuItems } from "./menu";
+import { moduleConfigs } from "../config/modules";
+import { buildMenu } from "./menu";
 import useNotificationsSocket from "../hooks/useNotificationsSocket";
 
 export default function AdminLayout() {
@@ -11,12 +14,37 @@ export default function AdminLayout() {
   const permissions = user?.permissions || [];
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const menuItems = useMemo(() => buildMenu(moduleConfigs), []);
+  const organizationItem = menuItems.find((item) => item.type === "dropdown" && item.key === "organization-dropdown");
+  const isOrganizationActive = organizationItem?.sections?.some((section) =>
+    section.items.some((child) => location.pathname + location.search === child.to || location.pathname === child.to),
+  );
+  const [organizationOpen, setOrganizationOpen] = useState(Boolean(isOrganizationActive));
 
-  const filteredMenu = menuItems.filter((item) => !item.permission || permissions.includes(item.permission));
+  useEffect(() => {
+    if (isOrganizationActive) {
+      setOrganizationOpen(true);
+    }
+  }, [isOrganizationActive]);
+
+  const filteredMenu = menuItems.filter((item) => {
+    if (item.type === "dropdown") {
+      return item.sections.some((section) => !section.permission || permissions.includes(section.permission));
+    }
+    return !item.permission || permissions.includes(item.permission);
+  });
 
   function logout() {
     dispatch(clearAuth());
     navigate("/login");
+  }
+
+  function renderActionIcon(label) {
+    if (label === "Create") return <FiFolderPlus size={14} />;
+    if (label === "Import") return <FiUpload size={14} />;
+    if (label === "Map") return <FiMap size={14} />;
+    return <FiList size={14} />;
   }
 
   return (
@@ -39,6 +67,56 @@ export default function AdminLayout() {
 
           <nav className="space-y-2 px-4 pb-6">
             {filteredMenu.map((item) => {
+              if (item.type === "dropdown") {
+                const Icon = item.icon;
+                const visibleSections = item.sections.filter((section) => !section.permission || permissions.includes(section.permission));
+                return (
+                  <div key={item.key} className="rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                    <button
+                      type="button"
+                      onClick={() => setOrganizationOpen((current) => !current)}
+                      className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                        organizationOpen || isOrganizationActive ? "bg-[#0C1C8C]/10 text-[#0C1C8C]" : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <Icon size={18} />
+                        {item.label}
+                      </span>
+                      {organizationOpen ? <FiChevronDown size={16} /> : <FiChevronRight size={16} />}
+                    </button>
+
+                    {organizationOpen ? (
+                      <div className="space-y-4 px-3 pb-4">
+                        {visibleSections.map((section) => (
+                          <div key={section.title} className="rounded-2xl bg-white p-3 shadow-sm">
+                            <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-600">{section.title}</h3>
+                            <div className="space-y-1">
+                              {section.items.map((child) => (
+                                <NavLink
+                                  key={child.to}
+                                  to={child.to}
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+                                      isActive || location.pathname + location.search === child.to
+                                        ? "bg-[#3A7728]/10 text-[#2f651f]"
+                                        : "text-slate-600 hover:bg-slate-100"
+                                    }`
+                                  }
+                                >
+                                  {renderActionIcon(child.label)}
+                                  {child.label}
+                                </NavLink>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
               const Icon = item.icon;
               return (
                 <NavLink

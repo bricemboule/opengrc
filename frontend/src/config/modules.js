@@ -5,10 +5,15 @@ export const moduleConfigs = [
     "route": "organizations",
     "endpoint": "/org/",
     "permission": "org.view_organization",
+    "views": [
+      "list",
+      "create",
+      "import"
+    ],
     "formFields": [
-      "organization",
       "name",
       "code",
+      "organization_type",
       "description",
       "email",
       "phone",
@@ -23,12 +28,19 @@ export const moduleConfigs = [
   },
   {
     "key": "sites",
-    "label": "Sites",
+    "label": "Offices",
     "route": "sites",
     "endpoint": "/org/sites/",
     "permission": "org.view_site",
+    "views": [
+      "list",
+      "create",
+      "import",
+      "map"
+    ],
     "formFields": [
       "organization",
+      "office_type",
       "name",
       "code",
       "site_type",
@@ -38,10 +50,13 @@ export const moduleConfigs = [
       "alternate_phone",
       "email",
       "fax",
-      "status"
+      "status",
+      "latitude",
+      "longitude"
     ],
     "columns": [
       "name",
+      "office_type_name",
       "city",
       "address"
     ]
@@ -52,11 +67,17 @@ export const moduleConfigs = [
     "route": "facilities",
     "endpoint": "/org/facilities/",
     "permission": "org.view_facility",
+    "views": [
+      "list",
+      "create",
+      "import"
+    ],
     "formFields": [
       "organization",
       "site",
       "name",
       "code",
+      "facility_type_ref",
       "facility_type",
       "status",
       "city",
@@ -65,11 +86,82 @@ export const moduleConfigs = [
       "phone",
       "email",
       "opening_times",
-      "description"
+      "description",
+      "latitude",
+      "longitude"
     ],
     "columns": [
       "name",
-      "facility_type",
+      "facility_type_name",
+      "status"
+    ]
+  },
+  {
+    "key": "organization_types",
+    "label": "Organization Types",
+    "route": "organization-types",
+    "endpoint": "/org/organization-types/",
+    "permission": "org.view_organizationtype",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "description",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
+  {
+    "key": "office_types",
+    "label": "Office Types",
+    "route": "office-types",
+    "endpoint": "/org/office-types/",
+    "permission": "org.view_officetype",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "description",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
+  {
+    "key": "facility_types",
+    "label": "Facility Types",
+    "route": "facility-types",
+    "endpoint": "/org/facility-types/",
+    "permission": "org.view_facilitytype",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "description",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
       "status"
     ]
   },
@@ -386,10 +478,20 @@ export const moduleConfigs = [
   },
   {
     "key": "asset_types",
-    "label": "Asset Types",
+    "label": "Resource Types",
     "route": "asset-types",
     "endpoint": "/assets/asset-types/",
     "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
     "columns": [
       "code",
       "name",
@@ -398,13 +500,26 @@ export const moduleConfigs = [
   },
   {
     "key": "assets",
-    "label": "Assets",
+    "label": "Resources",
     "route": "assets",
     "endpoint": "/assets/assets/",
     "permission": null,
+    "views": [
+      "list",
+      "create",
+      "import"
+    ],
+    "formFields": [
+      "organization",
+      "asset_type",
+      "code",
+      "name",
+      "status"
+    ],
     "columns": [
       "code",
       "name",
+      "asset_type_name",
       "status"
     ]
   },
