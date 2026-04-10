@@ -33,6 +33,80 @@ function buildAllowedModes(config, formFields) {
   return modes;
 }
 
+function isReportMode(mode) {
+  return String(mode || "").startsWith("report");
+}
+
+function isTableMode(mode) {
+  return mode === "list" || mode === "search" || isReportMode(mode);
+}
+
+function differenceInDays(targetDate) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
+function filterRowsBySearch(rows, search) {
+  const normalized = String(search || "").trim().toLowerCase();
+  if (!normalized) return rows;
+
+  return rows.filter((row) =>
+    Object.values(row || {}).some((value) => String(value ?? "").toLowerCase().includes(normalized)),
+  );
+}
+
+function getModePresentation(config, activeMode) {
+  const key = `${config?.key}:${activeMode}`;
+
+  switch (key) {
+    case "staff_skills:search":
+      return {
+        pageTitle: "Search by Skills",
+        pageDescription: "Recherche du personnel par compétence à partir du catalogue de compétences.",
+        searchPlaceholder: "Rechercher une compétence ou un membre du personnel...",
+      };
+    case "team_members:search":
+      return {
+        pageTitle: "Search Members",
+        pageDescription: "Recherche des membres d’équipe par nom, équipe ou rôle.",
+        searchPlaceholder: "Rechercher un membre ou une équipe...",
+      };
+    case "training_participants:search":
+      return {
+        pageTitle: "Search Training Participants",
+        pageDescription: "Recherche des participants aux formations par session ou par membre du personnel.",
+        searchPlaceholder: "Rechercher une formation ou un participant...",
+      };
+    case "staffs:report-staff":
+      return {
+        pageTitle: "Staff Report",
+        pageDescription: "Rapport consolidé du personnel enregistré dans l’organisation.",
+        searchPlaceholder: "Filtrer le rapport du personnel...",
+      };
+    case "staffs:report-contracts":
+      return {
+        pageTitle: "Expiring Staff Contracts Report",
+        pageDescription: "Suivi des contrats arrivant à échéance dans les 90 prochains jours.",
+        searchPlaceholder: "Filtrer le rapport des contrats...",
+      };
+    case "training_participants:report-training":
+      return {
+        pageTitle: "Training Report",
+        pageDescription: "Rapport des participants, statuts de complétion et délivrance des certificats.",
+        searchPlaceholder: "Filtrer le rapport de formation...",
+      };
+    default:
+      return {
+        pageTitle: config?.label,
+        pageDescription: `Gestion de ${config?.label?.toLowerCase()}`,
+        searchPlaceholder: "Rechercher...",
+      };
+  }
+}
+
 export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -65,14 +139,17 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const requestedMode = searchParams.get("mode") || "list";
   const activeMode = editingItem ? "edit" : allowedModes.has(requestedMode) ? requestedMode : "list";
   const rows = data?.results || data || [];
+  const modePresentation = useMemo(() => getModePresentation(config, activeMode), [activeMode, config]);
+  const needsExtendedRows = activeMode === "map" || isReportMode(activeMode);
 
-  const { data: mapData } = useQuery({
-    queryKey: [config?.key, "map"],
+  const { data: extendedData, refetch: refetchExtended } = useQuery({
+    queryKey: [config?.key, activeMode, "extended"],
     queryFn: async () => {
-      const response = await api.get(config.endpoint, { params: { ordering: "-created_at", page_size: 200 } });
+      const ordering = activeMode === "report-contracts" ? "contract_end_date" : "-created_at";
+      const response = await api.get(config.endpoint, { params: { ordering, page_size: 200 } });
       return response.data;
     },
-    enabled: Boolean(config?.endpoint) && activeMode === "map",
+    enabled: Boolean(config?.endpoint) && needsExtendedRows,
   });
 
   const columns = useMemo(
@@ -184,21 +261,49 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
     return <p>Chargement...</p>;
   }
 
-  const mapRows = mapData?.results || mapData || rows;
+  const extendedRows = extendedData?.results || extendedData || rows;
+  const mapRows = extendedRows;
   const canCreate = allowedModes.has("create") && formFields.length;
+  const contractRows = extendedRows
+    .filter((row) => row.contract_end_date)
+    .map((row) => ({
+      ...row,
+      days_remaining: differenceInDays(row.contract_end_date),
+    }))
+    .filter((row) => row.days_remaining >= 0 && row.days_remaining <= 90);
+  const reportRows =
+    activeMode === "report-contracts"
+      ? contractRows
+      : isReportMode(activeMode)
+        ? extendedRows
+        : rows;
+  const displayRows = isReportMode(activeMode) ? filterRowsBySearch(reportRows, search) : reportRows;
+  const displayColumns =
+    activeMode === "report-contracts"
+      ? [
+          ...columns,
+          {
+            key: "days_remaining",
+            label: "Days Remaining",
+            render: (row) => `${row.days_remaining} jour${row.days_remaining > 1 ? "s" : ""}`,
+          },
+        ]
+      : columns;
+  const showCreateAction = activeMode === "list" && canCreate;
 
   return (
     <div>
-      <PageHeader title={config.label} description={`Gestion de ${config.label.toLowerCase()}`} />
+      <PageHeader title={modePresentation.pageTitle} description={modePresentation.pageDescription} />
 
-      {activeMode === "list" ? (
+      {isTableMode(activeMode) ? (
         <>
           <DataToolbar
             search={search}
             setSearch={setSearch}
-            onRefresh={refetch}
+            onRefresh={needsExtendedRows ? refetchExtended : refetch}
+            placeholder={modePresentation.searchPlaceholder}
             action={
-              canCreate ? (
+              showCreateAction ? (
                 <button
                   onClick={() => {
                     setEditingItem(null);
@@ -213,12 +318,12 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
             }
           />
 
-          {rows.length ? (
+          {displayRows.length ? (
             <DataTable
-              columns={columns}
-              rows={rows}
+              columns={displayColumns}
+              rows={displayRows}
               rowActions={
-                formFields.length
+                activeMode === "list" && formFields.length
                   ? (row) => (
                       <div className="flex justify-end gap-2">
                         <button
@@ -244,16 +349,18 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
               }
             />
           ) : (
-            <EmptyState title={`Aucune donnée pour ${config.label.toLowerCase()}`} />
+            <EmptyState title={`Aucune donnée pour ${modePresentation.pageTitle.toLowerCase()}`} />
           )}
 
-          <Pagination
-            data={data}
-            onPageChange={(direction) => {
-              if (direction === "previous" && page > 1) setPage(page - 1);
-              if (direction === "next") setPage(page + 1);
-            }}
-          />
+          {activeMode === "list" || activeMode === "search" ? (
+            <Pagination
+              data={data}
+              onPageChange={(direction) => {
+                if (direction === "previous" && page > 1) setPage(page - 1);
+                if (direction === "next") setPage(page + 1);
+              }}
+            />
+          ) : null}
         </>
       ) : null}
 

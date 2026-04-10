@@ -1,9 +1,13 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
+from apps.hr.models import Certificate, Department, JobTitle, Staff, StaffSkill, Team, TeamMember, TrainingCourse, TrainingEvent, TrainingParticipant
 from apps.org.models import Facility, FacilityType, OfficeType, Organization, OrganizationType, Site
 from apps.people.models import Contact, Identity, Person
 from apps.projects.models import Activity, Project, Task
+from apps.volunteers.models import Skill
 
 
 class Command(BaseCommand):
@@ -74,6 +78,79 @@ class Command(BaseCommand):
             document_type="passport",
             document_number="CM-0001",
             defaults={"issued_country": "CM"},
+        )
+
+        department, _ = Department.objects.get_or_create(
+            organization=organization,
+            code="OPS",
+            defaults={"name": "Operations", "status": "active"},
+        )
+        job_title, _ = JobTitle.objects.get_or_create(
+            organization=organization,
+            code="COORD",
+            defaults={"name": "Coordinator", "status": "active"},
+        )
+        staff, _ = Staff.objects.get_or_create(
+            organization=organization,
+            code="STF-DEMO",
+            defaults={
+                "person": person,
+                "department": department,
+                "job_title": job_title,
+                "name": "Marie Operatrice",
+                "status": "active",
+                "contract_end_date": date(2026, 12, 31),
+            },
+        )
+        skill, _ = Skill.objects.get_or_create(
+            organization=organization,
+            code="SKILL-COORD",
+            defaults={"name": "Coordination", "status": "active"},
+        )
+        StaffSkill.objects.get_or_create(
+            organization=organization,
+            staff=staff,
+            skill=skill,
+            defaults={"proficiency": "advanced", "status": "active"},
+        )
+        team, _ = Team.objects.get_or_create(
+            organization=organization,
+            code="TEAM-RESP",
+            defaults={"name": "Rapid Response Team", "status": "active"},
+        )
+        TeamMember.objects.get_or_create(
+            organization=organization,
+            team=team,
+            staff=staff,
+            defaults={"role": "Lead", "status": "active"},
+        )
+        training_course, _ = TrainingCourse.objects.get_or_create(
+            organization=organization,
+            code="COURSE-EMERG",
+            defaults={"name": "Emergency Coordination", "status": "active"},
+        )
+        certificate, _ = Certificate.objects.get_or_create(
+            organization=organization,
+            code="CERT-EMERG",
+            defaults={"name": "Emergency Coordination Certificate", "status": "active"},
+        )
+        training_event, _ = TrainingEvent.objects.get_or_create(
+            organization=organization,
+            code="TRAIN-BOOTCAMP",
+            defaults={
+                "training_course": training_course,
+                "certificate": certificate,
+                "name": "Emergency Coordination Bootcamp",
+                "start_date": date(2026, 5, 1),
+                "end_date": date(2026, 5, 3),
+                "status": "planned",
+            },
+        )
+        TrainingParticipant.objects.get_or_create(
+            organization=organization,
+            training_event=training_event,
+            staff=staff,
+            defaults={"completion_status": "registered", "certificate_awarded": False},
         )
 
         site, _ = Site.objects.get_or_create(

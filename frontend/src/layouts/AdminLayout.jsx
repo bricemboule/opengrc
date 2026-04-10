@@ -1,12 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { LogOut } from "lucide-react";
-import { FiChevronDown, FiChevronRight, FiFolderPlus, FiList, FiMap, FiUpload } from "react-icons/fi";
+import { FiBarChart2, FiChevronDown, FiChevronRight, FiFileText, FiFolderPlus, FiList, FiMap, FiSearch, FiUpload } from "react-icons/fi";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAuth } from "../features/auth/authSlice";
 import { moduleConfigs } from "../config/modules";
 import { buildMenu } from "./menu";
 import useNotificationsSocket from "../hooks/useNotificationsSocket";
+
+function buildOpenState(menuItems, location) {
+  return menuItems.reduce((accumulator, item) => {
+    if (item.type === "dropdown") {
+      accumulator[item.key] = item.sections.some((section) =>
+        section.items.some((child) => location.pathname + location.search === child.to || location.pathname === child.to),
+      );
+    }
+    return accumulator;
+  }, {});
+}
 
 export default function AdminLayout() {
   useNotificationsSocket();
@@ -16,17 +27,28 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const menuItems = useMemo(() => buildMenu(moduleConfigs), []);
-  const organizationItem = menuItems.find((item) => item.type === "dropdown" && item.key === "organization-dropdown");
-  const isOrganizationActive = organizationItem?.sections?.some((section) =>
-    section.items.some((child) => location.pathname + location.search === child.to || location.pathname === child.to),
+  const activeDropdowns = useMemo(
+    () =>
+      menuItems.reduce((accumulator, item) => {
+        if (item.type === "dropdown") {
+          accumulator[item.key] = item.sections.some((section) =>
+            section.items.some((child) => location.pathname + location.search === child.to || location.pathname === child.to),
+          );
+        }
+        return accumulator;
+      }, {}),
+    [location, menuItems],
   );
-  const [organizationOpen, setOrganizationOpen] = useState(Boolean(isOrganizationActive));
+  const [openDropdowns, setOpenDropdowns] = useState(() => buildOpenState(menuItems, location));
 
   useEffect(() => {
-    if (isOrganizationActive) {
-      setOrganizationOpen(true);
-    }
-  }, [isOrganizationActive]);
+    setOpenDropdowns((current) =>
+      Object.entries(activeDropdowns).reduce((accumulator, [key, isActive]) => {
+        accumulator[key] = isActive ? true : current[key] ?? false;
+        return accumulator;
+      }, { ...current }),
+    );
+  }, [activeDropdowns]);
 
   const filteredMenu = menuItems.filter((item) => {
     if (item.type === "dropdown") {
@@ -42,9 +64,16 @@ export default function AdminLayout() {
 
   function renderActionIcon(label) {
     if (label === "Create") return <FiFolderPlus size={14} />;
-    if (label === "Import") return <FiUpload size={14} />;
+    if (label.includes("Import")) return <FiUpload size={14} />;
     if (label === "Map") return <FiMap size={14} />;
-    return <FiList size={14} />;
+    if (label.includes("Search")) return <FiSearch size={14} />;
+    if (label.includes("Report")) return <FiBarChart2 size={14} />;
+    if (label.includes("List")) return <FiList size={14} />;
+    return <FiFileText size={14} />;
+  }
+
+  function toggleDropdown(key) {
+    setOpenDropdowns((current) => ({ ...current, [key]: !current[key] }));
   }
 
   return (
@@ -70,45 +99,52 @@ export default function AdminLayout() {
               if (item.type === "dropdown") {
                 const Icon = item.icon;
                 const visibleSections = item.sections.filter((section) => !section.permission || permissions.includes(section.permission));
+                const isOpen = openDropdowns[item.key];
+                const isActive = activeDropdowns[item.key];
+
                 return (
                   <div key={item.key} className="rounded-2xl border border-slate-200/70 bg-slate-50/60">
                     <button
                       type="button"
-                      onClick={() => setOrganizationOpen((current) => !current)}
+                      onClick={() => toggleDropdown(item.key)}
                       className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                        organizationOpen || isOrganizationActive ? "bg-[#0C1C8C]/10 text-[#0C1C8C]" : "text-slate-700 hover:bg-slate-100"
+                        isOpen || isActive ? "bg-[#0C1C8C]/10 text-[#0C1C8C]" : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
                       <span className="flex items-center gap-3">
                         <Icon size={18} />
                         {item.label}
                       </span>
-                      {organizationOpen ? <FiChevronDown size={16} /> : <FiChevronRight size={16} />}
+                      {isOpen ? <FiChevronDown size={16} /> : <FiChevronRight size={16} />}
                     </button>
 
-                    {organizationOpen ? (
+                    {isOpen ? (
                       <div className="space-y-4 px-3 pb-4">
                         {visibleSections.map((section) => (
                           <div key={section.title} className="rounded-2xl bg-white p-3 shadow-sm">
                             <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-600">{section.title}</h3>
-                            <div className="space-y-1">
-                              {section.items.map((child) => (
-                                <NavLink
-                                  key={child.to}
-                                  to={child.to}
-                                  className={({ isActive }) =>
-                                    `flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
-                                      isActive || location.pathname + location.search === child.to
-                                        ? "bg-[#3A7728]/10 text-[#2f651f]"
-                                        : "text-slate-600 hover:bg-slate-100"
-                                    }`
-                                  }
-                                >
-                                  {renderActionIcon(child.label)}
-                                  {child.label}
-                                </NavLink>
-                              ))}
-                            </div>
+                            {section.items.length ? (
+                              <div className="space-y-1">
+                                {section.items.map((child) => (
+                                  <NavLink
+                                    key={child.to}
+                                    to={child.to}
+                                    className={({ isActive: isChildActive }) =>
+                                      `flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+                                        isChildActive || location.pathname + location.search === child.to
+                                          ? "bg-[#3A7728]/10 text-[#2f651f]"
+                                          : "text-slate-600 hover:bg-slate-100"
+                                      }`
+                                    }
+                                  >
+                                    {renderActionIcon(child.label)}
+                                    {child.label}
+                                  </NavLink>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-400">Catalogue combiné à venir.</p>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -324,10 +324,20 @@ export const moduleConfigs = [
   },
   {
     "key": "departments",
-    "label": "Departments",
+    "label": "Department Catalog",
     "route": "departments",
     "endpoint": "/hr/departments/",
     "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
     "columns": [
       "code",
       "name",
@@ -336,10 +346,20 @@ export const moduleConfigs = [
   },
   {
     "key": "job_titles",
-    "label": "Job Titles",
+    "label": "Job Title Catalog",
     "route": "job-titles",
     "endpoint": "/hr/job-titles/",
     "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
     "columns": [
       "code",
       "name",
@@ -348,13 +368,33 @@ export const moduleConfigs = [
   },
   {
     "key": "staffs",
-    "label": "Staffs",
+    "label": "Staff",
     "route": "staffs",
     "endpoint": "/hr/staffs/",
     "permission": null,
-    "columns": [
+    "views": [
+      "list",
+      "create",
+      "import",
+      "report-staff",
+      "report-contracts"
+    ],
+    "formFields": [
+      "organization",
+      "person",
+      "department",
+      "job_title",
       "code",
       "name",
+      "status",
+      "contract_end_date"
+    ],
+    "columns": [
+      "person_name",
+      "name",
+      "department_name",
+      "job_title_name",
+      "contract_end_date",
       "status"
     ]
   },
@@ -372,14 +412,198 @@ export const moduleConfigs = [
   },
   {
     "key": "skills",
-    "label": "Skills",
+    "label": "Skill Catalog",
     "route": "skills",
     "endpoint": "/volunteers/skills/",
     "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
     "columns": [
       "code",
       "name",
       "status"
+    ]
+  },
+  {
+    "key": "teams",
+    "label": "Teams",
+    "route": "teams",
+    "endpoint": "/hr/teams/",
+    "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
+  {
+    "key": "team_members",
+    "label": "Team Members",
+    "route": "team-members",
+    "endpoint": "/hr/team-members/",
+    "permission": null,
+    "views": [
+      "list",
+      "create",
+      "import",
+      "search"
+    ],
+    "formFields": [
+      "organization",
+      "team",
+      "staff",
+      "role",
+      "status"
+    ],
+    "columns": [
+      "team_name",
+      "staff_name",
+      "role",
+      "status"
+    ]
+  },
+  {
+    "key": "staff_skills",
+    "label": "Staff Skills",
+    "route": "staff-skills",
+    "endpoint": "/hr/staff-skills/",
+    "permission": null,
+    "views": [
+      "list",
+      "create",
+      "search"
+    ],
+    "formFields": [
+      "organization",
+      "staff",
+      "skill",
+      "proficiency",
+      "status"
+    ],
+    "columns": [
+      "staff_name",
+      "skill_name",
+      "proficiency",
+      "status"
+    ]
+  },
+  {
+    "key": "training_courses",
+    "label": "Training Course Catalog",
+    "route": "training-courses",
+    "endpoint": "/hr/training-courses/",
+    "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
+  {
+    "key": "certificates",
+    "label": "Certificate Catalog",
+    "route": "certificates",
+    "endpoint": "/hr/certificates/",
+    "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "code",
+      "name",
+      "status"
+    ],
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
+  {
+    "key": "training_events",
+    "label": "Training Events",
+    "route": "training-events",
+    "endpoint": "/hr/training-events/",
+    "permission": null,
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "organization",
+      "training_course",
+      "certificate",
+      "code",
+      "name",
+      "start_date",
+      "end_date",
+      "status"
+    ],
+    "columns": [
+      "name",
+      "training_course_name",
+      "start_date",
+      "end_date",
+      "status"
+    ]
+  },
+  {
+    "key": "training_participants",
+    "label": "Training Participants",
+    "route": "training-participants",
+    "endpoint": "/hr/training-participants/",
+    "permission": null,
+    "views": [
+      "list",
+      "create",
+      "import",
+      "search",
+      "report-training"
+    ],
+    "formFields": [
+      "organization",
+      "training_event",
+      "staff",
+      "completion_status",
+      "score",
+      "certificate_awarded"
+    ],
+    "columns": [
+      "training_event_name",
+      "staff_name",
+      "completion_status",
+      "score",
+      "certificate_awarded"
     ]
   },
   {

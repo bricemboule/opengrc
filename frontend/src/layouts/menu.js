@@ -1,4 +1,4 @@
-import { Box, LayoutDashboard } from "lucide-react";
+import { Box, LayoutDashboard, Users } from "lucide-react";
 
 const organizationManagedKeys = new Set([
   "organizations",
@@ -9,6 +9,20 @@ const organizationManagedKeys = new Set([
   "facility_types",
   "assets",
   "asset_types",
+]);
+
+const staffManagedKeys = new Set([
+  "departments",
+  "job_titles",
+  "staffs",
+  "skills",
+  "teams",
+  "team_members",
+  "staff_skills",
+  "training_courses",
+  "training_events",
+  "training_participants",
+  "certificates",
 ]);
 
 function buildModuleLookup(moduleConfigs) {
@@ -101,8 +115,83 @@ export function buildMenu(moduleConfigs) {
     ],
   };
 
+  const staffMenu = {
+    key: "staff-dropdown",
+    label: "Staff",
+    icon: Users,
+    type: "dropdown",
+    sections: [
+      {
+        title: "Staff",
+        permission: modulesByKey.staffs?.permission,
+        items: [
+          { label: "Create", to: buildRoute(modulesByKey.staffs, "create") },
+          { label: "Search by Skills", to: buildRoute(modulesByKey.staff_skills, "search") },
+          { label: "Import", to: buildRoute(modulesByKey.staffs, "import") },
+        ],
+      },
+      {
+        title: "Staff & Volunteers (Combined)",
+        permission: null,
+        items: [],
+      },
+      {
+        title: "Teams",
+        permission: modulesByKey.teams?.permission,
+        items: [
+          { label: "Create", to: buildRoute(modulesByKey.teams, "create") },
+          { label: "Search Members", to: buildRoute(modulesByKey.team_members, "search") },
+          { label: "Import", to: buildRoute(modulesByKey.team_members, "import") },
+        ],
+      },
+      {
+        title: "Department Catalog",
+        permission: modulesByKey.departments?.permission,
+        items: [{ label: "Create", to: buildRoute(modulesByKey.departments, "create") }],
+      },
+      {
+        title: "Job Title Catalog",
+        permission: modulesByKey.job_titles?.permission,
+        items: [{ label: "Create", to: buildRoute(modulesByKey.job_titles, "create") }],
+      },
+      {
+        title: "Skill Catalog",
+        permission: modulesByKey.skills?.permission,
+        items: [{ label: "Create", to: buildRoute(modulesByKey.skills, "create") }],
+      },
+      {
+        title: "Training Events",
+        permission: modulesByKey.training_events?.permission,
+        items: [
+          { label: "Create", to: buildRoute(modulesByKey.training_events, "create") },
+          { label: "Search Training Participants", to: buildRoute(modulesByKey.training_participants, "search") },
+          { label: "Import Participant List", to: buildRoute(modulesByKey.training_participants, "import") },
+        ],
+      },
+      {
+        title: "Training Course Catalog",
+        permission: modulesByKey.training_courses?.permission,
+        items: [{ label: "Create", to: buildRoute(modulesByKey.training_courses, "create") }],
+      },
+      {
+        title: "Certificate Catalog",
+        permission: modulesByKey.certificates?.permission,
+        items: [{ label: "Create", to: buildRoute(modulesByKey.certificates, "create") }],
+      },
+      {
+        title: "Reports",
+        permission: null,
+        items: [
+          { label: "Staff Report", to: buildRoute(modulesByKey.staffs, "report-staff") },
+          { label: "Expiring Staff Contracts Report", to: buildRoute(modulesByKey.staffs, "report-contracts") },
+          { label: "Training Report", to: buildRoute(modulesByKey.training_participants, "report-training") },
+        ],
+      },
+    ],
+  };
+
   const flatItems = moduleConfigs
-    .filter((item) => !organizationManagedKeys.has(item.key))
+    .filter((item) => !organizationManagedKeys.has(item.key) && !staffManagedKeys.has(item.key))
     .map((item) => ({
       type: "link",
       label: item.label,
@@ -114,8 +203,9 @@ export function buildMenu(moduleConfigs) {
   return [
     { type: "link", label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     organizationMenu,
+    staffMenu,
     ...flatItems,
   ];
 }
 
-export { organizationManagedKeys };
+export { organizationManagedKeys, staffManagedKeys };
