@@ -18,7 +18,7 @@ export default function OrganizationsPage() {
   const { data, isLoading, refetch } = usePaginatedList("organizations", "/org/", {
     search, page, ordering: "-created_at",
   });
-  const createMutation = useCreateItem("organizations", "/org/", "Organisation créée");
+  const createMutation = useCreateItem("organizations", "/org/", "Organization created");
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -27,18 +27,18 @@ export default function OrganizationsPage() {
     setForm({ name: "", code: "", email: "", is_active: true });
   }
 
-  if (isLoading) return <p>Chargement...</p>;
+  if (isLoading) return <p>Loading...</p>;
   const rows = data?.results || [];
 
   return (
     <div>
       <PageHeader
-        title="Organisations"
-        description="Gestion des organisations"
+        title="Organizations"
+        description="Organization management"
         action={
           <div className="flex gap-2">
             <button onClick={() => downloadFile("/org/export-csv/", "organizations.csv")} className="rounded-2xl bg-[#3A7728] px-4 py-2 text-sm font-medium text-white">Export CSV</button>
-            <button onClick={() => setIsOpen(true)} className="rounded-2xl bg-[#0C1C8C] px-4 py-2 text-sm font-medium text-white">Ajouter</button>
+            <button onClick={() => setIsOpen(true)} className="rounded-2xl bg-[#0C1C8C] px-4 py-2 text-sm font-medium text-white">Add</button>
           </div>
         }
       />
@@ -46,17 +46,18 @@ export default function OrganizationsPage() {
       <DataToolbar search={search} setSearch={setSearch} onRefresh={refetch} />
 
       {!rows.length ? (
-        <EmptyState title="Aucune organisation" description="Commence par créer une organisation." />
+        <EmptyState title="No organizations" description="Start by creating an organization." />
       ) : (
         <>
           <DataTable
             columns={[
-              { key: "name", label: "Nom" },
+              { key: "name", label: "Name" },
               { key: "code", label: "Code" },
               { key: "email", label: "Email" },
-              { key: "is_active", label: "Actif", render: (row) => (row.is_active ? "Oui" : "Non") },
+              { key: "is_active", label: "Active", render: (row) => (row.is_active ? "Yes" : "No") },
             ]}
             rows={rows}
+            selectable
           />
           <Pagination
             data={data}
@@ -68,12 +69,12 @@ export default function OrganizationsPage() {
         </>
       )}
 
-      <FormModal title="Nouvelle organisation" isOpen={isOpen} onClose={() => setIsOpen(false)}>
+      <FormModal title="New organization" isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input className="w-full rounded-2xl border border-slate-200 px-4 py-3" placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input className="w-full rounded-2xl border border-slate-200 px-4 py-3" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className="w-full rounded-2xl border border-slate-200 px-4 py-3" placeholder="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <input className="w-full rounded-2xl border border-slate-200 px-4 py-3" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <button type="submit" className="rounded-2xl bg-[#CE1126] px-4 py-3 font-semibold text-white">Enregistrer</button>
+          <button type="submit" className="rounded-2xl bg-[#CE1126] px-4 py-3 font-semibold text-white">Save</button>
         </form>
       </FormModal>
     </div>

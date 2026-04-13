@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.people",
     "apps.projects",
     "apps.communications",
+    "apps.cybergrc",
 
     "apps.core.files",
     "apps.hr",
@@ -104,7 +105,7 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
-LANGUAGE_CODE = "fr-fr"
+LANGUAGE_CODE = "en-gb"
 TIME_ZONE = "Africa/Douala"
 USE_I18N = True
 USE_TZ = True

@@ -9,7 +9,7 @@ function extractErrorMessage(error, fallback) {
   return fallback;
 }
 
-export function useCreateItem(queryKey, endpoint, successMessage = "Créé avec succès") {
+export function useCreateItem(queryKey, endpoint, successMessage = "Created successfully") {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload) => (await api.post(endpoint, payload)).data,
@@ -17,11 +17,11 @@ export function useCreateItem(queryKey, endpoint, successMessage = "Créé avec 
       queryClient.invalidateQueries({ queryKey: [queryKey] });
       notifySuccess(successMessage);
     },
-    onError: (error) => notifyError(extractErrorMessage(error, "Échec de la création")),
+    onError: (error) => notifyError(extractErrorMessage(error, "Creation failed")),
   });
 }
 
-export function useUpdateItem(queryKey, endpoint, successMessage = "Mis à jour avec succès") {
+export function useUpdateItem(queryKey, endpoint, successMessage = "Updated successfully") {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, payload }) => (await api.patch(`${endpoint}${id}/`, payload)).data,
@@ -29,11 +29,11 @@ export function useUpdateItem(queryKey, endpoint, successMessage = "Mis à jour 
       queryClient.invalidateQueries({ queryKey: [queryKey] });
       notifySuccess(successMessage);
     },
-    onError: (error) => notifyError(extractErrorMessage(error, "Échec de la mise à jour")),
+    onError: (error) => notifyError(extractErrorMessage(error, "Update failed")),
   });
 }
 
-export function useDeleteItem(queryKey, endpoint, successMessage = "Supprimé avec succès") {
+export function useDeleteItem(queryKey, endpoint, successMessage = "Deleted successfully") {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id) => await api.delete(`${endpoint}${id}/`),
@@ -41,6 +41,6 @@ export function useDeleteItem(queryKey, endpoint, successMessage = "Supprimé av
       queryClient.invalidateQueries({ queryKey: [queryKey] });
       notifySuccess(successMessage);
     },
-    onError: (error) => notifyError(extractErrorMessage(error, "Échec de la suppression")),
+    onError: (error) => notifyError(extractErrorMessage(error, "Deletion failed")),
   });
 }

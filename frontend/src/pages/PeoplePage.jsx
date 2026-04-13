@@ -1,20 +1,33 @@
-import useCrudList from "../hooks/useCrudList";
+import { useState } from "react";
 import DataTable from "../components/crud/DataTable";
 import PageHeader from "../components/crud/PageHeader";
+import Pagination from "../components/crud/Pagination";
+import usePaginatedList from "../hooks/usePaginatedList";
 
 export default function PeoplePage() {
-  const { data, isLoading } = useCrudList("people", "/people/");
-  if (isLoading) return <p>Chargement...</p>;
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = usePaginatedList("people", "/people/", { page });
+
+  if (isLoading) return <p>Loading...</p>;
+
   return (
     <div>
-      <PageHeader title="Personnes" description="Annuaire des personnes" />
+      <PageHeader title="People" description="People directory" />
       <DataTable
         columns={[
-          { key: "first_name", label: "Prénom" },
-          { key: "last_name", label: "Nom" },
-          { key: "gender", label: "Genre" },
+          { key: "first_name", label: "First name" },
+          { key: "last_name", label: "Last name" },
+          { key: "gender", label: "Gender" },
         ]}
         rows={data?.results || []}
+        selectable
+      />
+      <Pagination
+        data={data}
+        onPageChange={(direction) => {
+          if (direction === "previous" && page > 1) setPage(page - 1);
+          if (direction === "next") setPage(page + 1);
+        }}
       />
     </div>
   );

@@ -3,32 +3,14 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { loginRequest } from "./api";
 import { setAuth } from "./authSlice";
-
-function GambiaFlagPanel() {
-  return (
-    <div className="relative min-h-[260px] overflow-hidden md:min-h-[320px] lg:min-h-full">
-      <div className="absolute inset-0 flex h-full w-full flex-col">
-        <div className="h-[33%] bg-[#CE1126]" />
-        <div className="h-[4%] bg-white" />
-        <div className="h-[22%] bg-[#0C1C8C]" />
-        <div className="h-[4%] bg-white" />
-        <div className="h-[37%] bg-[#3A7728]" />
-      </div>
-    </div>
-  );
-}
+import BrandLogo from "../../components/brand/BrandLogo";
+import loginHeroServer from "../../assets/login-hero-server.jpg";
 
 function Field({ label, type, placeholder, value, onChange }) {
   return (
     <div className="space-y-3">
-      <label className="block text-[15px] font-medium text-[#161616]">{label}</label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        className="h-12 w-full rounded-xl border border-transparent bg-[#f6f6f6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#0C1C8C]/20 focus:bg-white focus:ring-4 focus:ring-[#0C1C8C]/8"
-      />
+      <label className="ml-4 block text-[13px] font-normal text-[#5e5650]">{label}</label>
+      <input type={type} placeholder={placeholder} value={value} onChange={onChange} className="app-input login-input" />
     </div>
   );
 }
@@ -40,8 +22,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setError("");
     setLoading(true);
     try {
@@ -53,9 +35,9 @@ export default function LoginPage() {
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
-        err?.response?.data?.non_field_errors?.[0] ||
-        err?.response?.data?.non_field_errors ||
-        (err?.response ? "Connexion échouée." : "Impossible de joindre l'API de connexion.")
+          err?.response?.data?.non_field_errors?.[0] ||
+          err?.response?.data?.non_field_errors ||
+          (err?.response ? "Connexion echouee." : "Impossible de joindre l API de connexion."),
       );
     } finally {
       setLoading(false);
@@ -63,54 +45,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5] px-4 py-8 md:px-8">
-      <div className="grid w-full max-w-[1088px] overflow-hidden rounded-[6px] bg-white shadow-[0_14px_48px_rgba(15,23,42,0.08)] lg:min-h-[528px] lg:grid-cols-[1.04fr_1fr]">
-        <GambiaFlagPanel />
+    <div className="h-screen overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
+      <div className="grid h-full w-full gap-4 lg:grid-cols-[1.12fr_0.88fr]">
+        <section className="overflow-hidden rounded-[24px] pt-0 pr-2 pb-0 pl-0 sm:pt-0.5 sm:pr-2.5 sm:pb-0.5 sm:pl-0.5">
+          <img src={loginHeroServer} alt="Critical infrastructure systems" className="h-full min-h-[300px] w-full rounded-[20px] object-cover object-center" />
+        </section>
 
-        <div className="flex items-center px-6 py-8 sm:px-10 md:px-12 lg:px-12">
-          <div className="w-full">
-            <p className="max-w-[420px] text-[14px] leading-8 text-[#8b8e98]">
-              Bienvenue sur la plateforme de gestion OpenGRC. Connectez-vous pour accéder à votre espace.
+        <section className="flex items-center justify-center px-4 py-5 sm:px-8 lg:px-12">
+          <div className="w-full max-w-[440px]">
+            <BrandLogo title="OpenGRC" compact />
+
+            <h1 className="mt-8 text-[2.2rem] font-semibold tracking-[-0.06em] text-slate-950">Welcome back</h1>
+            <p className="mt-3 max-w-md text-sm leading-7 text-[#5e5650]">
+              Connect to the OpenGRC workspace to continue with your dashboards, workflows, and operational reviews.
             </p>
 
-            <div className="mt-5 border-b border-[#e5e7eb] pb-3 text-[14px] text-[#8b8e98]">
-              Informations sur le compte
-            </div>
+            <div className="mt-8 border-b border-slate-200/70 pb-3 text-sm text-[#5e5650]">Account access</div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-9">
+            <form onSubmit={handleSubmit} className="mt-7 space-y-6">
               <Field
-                label="Identifiant"
+                label="Identifier"
                 type="email"
-                placeholder=""
+                placeholder="name@company.com"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
               />
 
               <Field
-                label="Mot de passe"
+                label="Password"
                 type="password"
-                placeholder=""
+                placeholder="Enter your password"
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
               />
 
-              {error ? (
-                <div className="rounded-xl border border-[#CE1126]/20 bg-[#fff4f4] px-4 py-3 text-sm text-[#A30D1D]">
-                  {error}
-                </div>
-              ) : null}
+              {error ? <div className="rounded-[24px] bg-[#fff1ef] px-4 py-3 text-sm text-[#a63d34]">{error}</div> : null}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="h-12 w-full rounded-lg bg-[#3A7728] text-[15px] font-semibold tracking-[0.08em] text-white transition hover:bg-[#2f651f] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {loading ? "CONNEXION..." : "CONNEXION"}
+              <div className="pt-3">
+              <button type="submit" disabled={loading} className="app-button app-button-dark login-submit w-full">
+                {loading ? "Connecting..." : "Connect"}
               </button>
+              </div>
             </form>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
+

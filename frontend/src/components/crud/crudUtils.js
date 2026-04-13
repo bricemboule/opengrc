@@ -16,19 +16,101 @@ const HIDDEN_FIELDS = new Set([
   "assigned_to_name",
 ]);
 
+const TEXTAREA_FIELD_NAMES = new Set([
+  "description",
+  "comments",
+  "notes",
+  "summary",
+  "risk_summary",
+  "scenario",
+  "response_plan",
+  "update_notes",
+  "communication_procedure",
+  "coordination_mechanism",
+  "information_sharing_protocol",
+  "activation_trigger",
+  "activation_notes",
+  "participating_sectors",
+  "findings",
+  "lessons_learned",
+  "control_focus",
+  "compliance_focus",
+  "incident_response_procedure",
+  "recovery_procedure",
+  "review_notes",
+]);
+
+const BOOLEAN_FIELD_NAMES = new Set([
+  "requires_nda",
+  "critical_asset",
+  "certificate_required",
+]);
+
+const INTEGER_FIELD_NAMES = new Set([
+  "likelihood",
+  "impact",
+  "duration_days",
+  "participant_target",
+  "planned_week",
+]);
+
+const DECIMAL_FIELD_NAMES = new Set([
+  "latitude",
+  "longitude",
+  "risk_score",
+]);
+
+const EMAIL_FIELD_NAMES = new Set(["email"]);
+const URL_FIELD_NAMES = new Set(["document_reference", "source_url", "url"]);
+
 export function toLabel(value) {
   return value.replaceAll("_", " ").replace(/(^|\s)\w/g, (character) => character.toUpperCase());
 }
 
+function inferFieldType(name) {
+  if (BOOLEAN_FIELD_NAMES.has(name)) return "boolean";
+  if (INTEGER_FIELD_NAMES.has(name)) return "integer";
+  if (DECIMAL_FIELD_NAMES.has(name)) return "decimal";
+  if (EMAIL_FIELD_NAMES.has(name)) return "email";
+  if (URL_FIELD_NAMES.has(name)) return "url";
+  if (TEXTAREA_FIELD_NAMES.has(name)) return "textarea";
+  if (name.endsWith("_date") || name.endsWith("_at")) return "date";
+  return "string";
+}
+
+function buildFallbackField(name, configuredField = {}) {
+  return {
+    name,
+    label: configuredField.label || toLabel(name),
+    type: configuredField.type || inferFieldType(name),
+    required: configuredField.required || false,
+    read_only: false,
+    choices: configuredField.choices || [],
+    placeholder: configuredField.placeholder,
+    default: configuredField.default,
+  };
+}
+
 export function buildFieldList(config, metadata) {
   const postFields = metadata?.actions?.POST || {};
+  const configuredDefinitions = new Map((config?.fieldDefinitions || []).map((field) => [field.name, field]));
   const preferred = config?.formFields || [];
-  const allNames = preferred.length ? preferred.filter((name) => postFields[name]) : Object.keys(postFields);
-  const remaining = preferred.length ? [] : Object.keys(postFields);
+  const metadataNames = Object.keys(postFields);
+  const allNames = preferred.length
+    ? preferred
+    : metadataNames.length
+      ? metadataNames
+      : Array.from(configuredDefinitions.keys());
+  const remaining = preferred.length ? metadataNames.filter((name) => !preferred.includes(name)) : [];
 
   return [...allNames, ...remaining]
     .filter((name, index, array) => array.indexOf(name) === index)
-    .map((name) => ({ name, ...postFields[name] }))
+    .map((name) => ({
+      ...buildFallbackField(name, configuredDefinitions.get(name)),
+      ...(postFields[name] || {}),
+      ...(configuredDefinitions.get(name) || {}),
+      name,
+    }))
     .filter((field) => !field.read_only && !HIDDEN_FIELDS.has(field.name));
 }
 

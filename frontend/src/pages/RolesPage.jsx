@@ -1,26 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
-import api from "../api/client";
+import { useState } from "react";
+import DataTable from "../components/crud/DataTable";
+import Pagination from "../components/crud/Pagination";
 import PageHeader from "../components/crud/PageHeader";
+import usePaginatedList from "../hooks/usePaginatedList";
 
 export default function RolesPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: async () => (await api.get("/rbac/roles/")).data,
-  });
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = usePaginatedList("roles", "/rbac/roles/", { page });
 
-  if (isLoading) return <p>Chargement...</p>;
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <div>
-      <PageHeader title="Rôles" description="Gestion des rôles" />
-      <div className="space-y-4">
-        {(data?.results || []).map((role) => (
-          <div key={role.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h2 className="font-semibold text-slate-900">{role.name}</h2>
-            <p className="text-sm text-slate-500">{role.code}</p>
-          </div>
-        ))}
-      </div>
+      <PageHeader title="Roles" description="Role management" />
+      <DataTable
+        columns={[
+          { key: "name", label: "Name" },
+          { key: "code", label: "Code" },
+        ]}
+        rows={data?.results || []}
+        selectable
+      />
+      <Pagination
+        data={data}
+        onPageChange={(direction) => {
+          if (direction === "previous" && page > 1) setPage(page - 1);
+          if (direction === "next") setPage(page + 1);
+        }}
+      />
     </div>
   );
 }
