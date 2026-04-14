@@ -50,29 +50,11 @@ function formatNotificationDate(value) {
   return Number.isNaN(date.getTime()) ? "Now" : date.toLocaleString();
 }
 
-const previewNotifications = [
-  {
-    id: "preview-1",
-    message: "Desk study review for the national telecom backbone moved to In review and is due today.",
-    receivedAt: "2026-04-13T08:30:00",
-  },
-  {
-    id: "preview-2",
-    message: "Stakeholder consultation with the national energy regulator was scheduled for April 15, 2026.",
-    receivedAt: "2026-04-13T07:10:00",
-  },
-  {
-    id: "preview-3",
-    message: "Action plan task on backup power resilience is blocked pending infrastructure validation.",
-    receivedAt: "2026-04-12T17:25:00",
-  },
-];
-
 export default function AdminLayout() {
   useNotificationsSocket();
   const user = useSelector((state) => state.auth.user);
   const notifications = useSelector((state) => state.notifications.items);
-  const visibleNotifications = notifications.length ? notifications : previewNotifications;
+  const visibleNotifications = notifications;
   const permissions = user?.permissions || [];
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -179,6 +161,11 @@ export default function AdminLayout() {
     if (quickAddTarget) navigate(quickAddTarget);
   }
 
+  function openSettings() {
+    navigate("/settings");
+  }
+
+  const isSettingsRoute = location.pathname === "/settings";
   const sidebarWidth = isSidebarCollapsed ? "96px" : "290px";
 
   return (
@@ -377,12 +364,13 @@ export default function AdminLayout() {
 
               <button
                 type="button"
-                style={{ backgroundColor: "rgba(248, 244, 239, 0.82)", width: "3rem", height: "3rem", padding: 0 }}
-                className="app-button app-button-soft app-icon-button relative text-slate-600"
+                onClick={openSettings}
+                style={{ backgroundColor: isSettingsRoute ? "rgba(255, 255, 255, 0.96)" : "rgba(248, 244, 239, 0.82)", width: "3rem", height: "3rem", padding: 0 }}
+                className={`app-button app-icon-button relative text-slate-600 ${isSettingsRoute ? "shadow-[0_14px_34px_rgba(15,23,42,0.08)]" : "app-button-soft"}`}
                 aria-label="Settings"
               >
                 <Settings size={20} strokeWidth={1.9} />
-                <span className="absolute right-3.5 top-3.5 h-1.5 w-1.5 rounded-full bg-[#fc8158]" aria-hidden="true" />
+                {!isSettingsRoute ? <span className="absolute right-3.5 top-3.5 h-1.5 w-1.5 rounded-full bg-[#fc8158]" aria-hidden="true" /> : null}
               </button>
 
               <button type="button" onClick={handleQuickAdd} disabled={!quickAddTarget} className="app-button app-button-dark min-w-[128px]  disabled:cursor-not-allowed disabled:opacity-50">

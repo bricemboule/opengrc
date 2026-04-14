@@ -1,21 +1,15 @@
-import logging
+from django.db import transaction
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
-logger = logging.getLogger(__name__)
+from apps.communications.notifications import dispatch_notification
 
 
-def broadcast_notification(message):
-    channel_layer = get_channel_layer()
-    if not channel_layer:
-        return
-
-    try:
-        async_to_sync(channel_layer.group_send)(
-            "global_notifications",
-            {"type": "broadcast_notification", "message": message},
+def broadcast_notification(message, organization=None, title="Cyber GRC alert", source="cybergrc", send_email=True):
+    transaction.on_commit(
+        lambda: dispatch_notification(
+            message=message,
+            organization=organization,
+            title=title,
+            source=source,
+            send_email=send_email,
         )
-    except Exception:  # pragma: no cover - defensive runtime guard
-        logger.exception("Unable to broadcast realtime notification")
-
+    )

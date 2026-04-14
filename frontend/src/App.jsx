@@ -7,6 +7,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import DashboardPage from "./pages/DashboardPage";
 import ModuleListPage from "./pages/ModuleListPage";
 import RouteErrorPage from "./pages/RouteErrorPage";
+import SettingsPage from "./pages/SettingsPage";
 import { moduleConfigs } from "./config/modules";
 
 const router = createBrowserRouter([
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
+      { path: "settings", element: <SettingsPage /> },
       ...moduleConfigs.map((item) => {
         const modulePage = <ModuleListPage key={item.route} moduleKey={item.route} />;
         return {

@@ -88,7 +88,7 @@ export default function Pagination({
               <div
                 role="listbox"
                 aria-label="Elements per page"
-                className="absolute bottom-[calc(100%+0.45rem)] left-0 z-30 min-w-full overflow-hidden rounded-[10px] border border-black/10 bg-[#fffdfa] p-1.5"
+                className="absolute bottom-[calc(100%+0.45rem)] left-0 z-30 min-w-full max-h-[26rem] overflow-y-auto rounded-[10px] border border-black/10 bg-[#fffdfa] p-1.5"
               >
                 {pageSizeOptions.map((option) => {
                   const isActive = Number(option) === normalizedPageSize;

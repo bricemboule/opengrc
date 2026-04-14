@@ -20,6 +20,7 @@ from .models import (
     GovernanceArtifact,
     Phase,
     RiskRegisterEntry,
+    Sector,
     SimulationExercise,
     Stakeholder,
     StakeholderConsultation,
@@ -37,6 +38,7 @@ from .serializers import (
     EmergencyResponseAssetSerializer,
     GovernanceArtifactSerializer,
     RiskRegisterEntrySerializer,
+    SectorSerializer,
     SimulationExerciseSerializer,
     StakeholderConsultationSerializer,
     StakeholderSerializer,
@@ -460,19 +462,27 @@ class CyberGrcOverviewView(APIView):
         return Response(payload)
 
 
+class SectorViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = Sector.objects.select_related("organization").all()
+    serializer_class = SectorSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["code", "name", "description", "status"]
+    ordering_fields = ["id", "name", "code", "status", "created_at"]
+
+
 class StakeholderViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = Stakeholder.objects.select_related("organization").all()
+    queryset = Stakeholder.objects.select_related("organization", "sector_ref").all()
     serializer_class = StakeholderSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["name", "stakeholder_type", "sector", "focal_point", "email", "engagement_role"]
+    search_fields = ["name", "stakeholder_type", "sector", "sector_ref__name", "focal_point", "email", "engagement_role"]
     ordering_fields = ["id", "name", "sector", "created_at"]
 
 
 class CriticalInfrastructureViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = CriticalInfrastructure.objects.select_related("organization", "owner_stakeholder").all()
+    queryset = CriticalInfrastructure.objects.select_related("organization", "owner_stakeholder", "sector_ref").all()
     serializer_class = CriticalInfrastructureSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["code", "name", "sector", "owner_name", "essential_service", "location"]
+    search_fields = ["code", "name", "sector", "sector_ref__name", "owner_name", "essential_service", "location"]
     ordering_fields = ["id", "name", "criticality_level", "mapping_status", "created_at"]
 
 
@@ -525,10 +535,10 @@ class ContingencyPlanViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditMod
 
 
 class EmergencyResponseAssetViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = EmergencyResponseAsset.objects.select_related("organization", "contingency_plan", "infrastructure").all()
+    queryset = EmergencyResponseAsset.objects.select_related("organization", "contingency_plan", "infrastructure", "owner_stakeholder").all()
     serializer_class = EmergencyResponseAssetSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["name", "asset_type", "owner_name", "location", "activation_notes"]
+    search_fields = ["name", "asset_type", "owner_name", "owner_stakeholder__name", "location", "activation_notes"]
     ordering_fields = ["id", "name", "priority", "availability_status", "created_at"]
 
 
@@ -541,10 +551,10 @@ class SimulationExerciseViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAudit
 
 
 class CyberStandardViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
-    queryset = CyberStandard.objects.select_related("organization").all()
+    queryset = CyberStandard.objects.select_related("organization", "target_sector_ref").all()
     serializer_class = CyberStandardSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["title", "standard_type", "target_sector", "owner_name", "summary"]
+    search_fields = ["title", "standard_type", "target_sector", "target_sector_ref__name", "owner_name", "summary"]
     ordering_fields = ["id", "title", "standard_type", "status", "next_review_date", "created_at"]
 
 

@@ -43,14 +43,43 @@ const cybergrcFieldDefinitions = {
         { value: "other", display_name: "Other" },
       ],
     },
+    {
+      name: "sector_ref",
+      label: "Sector",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/sectors/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "email", type: "email" },
     { name: "status", type: "choice", choices: WORKFLOW_STATUS_CHOICES },
     { name: "notes", type: "textarea" },
   ],
   critical_infrastructure: [
+    {
+      name: "owner_stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "code", required: true },
     { name: "name", required: true },
-    { name: "sector", required: true },
+    {
+      name: "sector_ref",
+      label: "Sector",
+      type: "relation",
+      required: true,
+      relation: {
+        endpoint: "/cybergrc/sectors/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     {
       name: "infrastructure_type",
       type: "choice",
@@ -100,6 +129,24 @@ const cybergrcFieldDefinitions = {
   ],
   governance_artifacts: [
     { name: "title", required: true },
+    {
+      name: "owner_stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "related_infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "phase", type: "choice", choices: PHASE_CHOICES },
     {
       name: "artifact_type",
@@ -125,6 +172,15 @@ const cybergrcFieldDefinitions = {
     { name: "next_review_date", type: "date" },
   ],
   risk_register_entries: [
+    {
+      name: "infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "title", required: true },
     { name: "scenario", type: "textarea" },
     { name: "likelihood", type: "integer" },
@@ -169,6 +225,34 @@ const cybergrcFieldDefinitions = {
     { name: "notes", type: "textarea" },
   ],
   emergency_response_assets: [
+    {
+      name: "contingency_plan",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/contingency-plans/",
+        labelField: "title",
+        ordering: "title",
+      },
+    },
+    {
+      name: "infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "owner_stakeholder",
+      label: "Owner stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "name", required: true },
     {
       name: "asset_type",
@@ -196,6 +280,15 @@ const cybergrcFieldDefinitions = {
     { name: "activation_notes", type: "textarea" },
   ],
   simulation_exercises: [
+    {
+      name: "contingency_plan",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/contingency-plans/",
+        labelField: "title",
+        ordering: "title",
+      },
+    },
     { name: "title", required: true },
     {
       name: "exercise_type",
@@ -217,6 +310,16 @@ const cybergrcFieldDefinitions = {
   cyber_standards: [
     { name: "title", required: true },
     {
+      name: "target_sector_ref",
+      label: "Target sector",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/sectors/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
       name: "standard_type",
       type: "choice",
       choices: [
@@ -234,6 +337,15 @@ const cybergrcFieldDefinitions = {
   ],
   audit_frameworks: [
     { name: "title", required: true },
+    {
+      name: "related_standard",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/cyber-standards/",
+        labelField: "title",
+        ordering: "title",
+      },
+    },
     { name: "status", type: "choice", choices: WORKFLOW_STATUS_CHOICES },
     { name: "compliance_focus", type: "textarea" },
     { name: "incident_response_procedure", type: "textarea" },
@@ -295,6 +407,24 @@ const cybergrcFieldDefinitions = {
     { name: "notes", type: "textarea" },
   ],
   desk_study_reviews: [
+    {
+      name: "related_stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "related_infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "title", required: true },
     {
       name: "source_type",
@@ -322,6 +452,24 @@ const cybergrcFieldDefinitions = {
     { name: "notes", type: "textarea" },
   ],
   stakeholder_consultations: [
+    {
+      name: "stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "related_infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "title", required: true },
     {
       name: "consultation_type",
@@ -346,6 +494,24 @@ const cybergrcFieldDefinitions = {
     { name: "notes", type: "textarea" },
   ],
   capacity_assessments: [
+    {
+      name: "infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "stakeholder",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/stakeholders/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "title", required: true },
     { name: "scope" },
     { name: "assessment_area" },
@@ -362,6 +528,33 @@ const cybergrcFieldDefinitions = {
     { name: "notes", type: "textarea" },
   ],
   action_plan_tasks: [
+    {
+      name: "related_risk",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/risk-register/",
+        labelField: "title",
+        ordering: "title",
+      },
+    },
+    {
+      name: "related_milestone",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/deliverable-milestones/",
+        labelField: "title",
+        ordering: "title",
+      },
+    },
+    {
+      name: "related_infrastructure",
+      type: "relation",
+      relation: {
+        endpoint: "/cybergrc/critical-infrastructure/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
     { name: "title", required: true },
     { name: "workstream" },
     { name: "owner_name" },
@@ -378,7 +571,211 @@ const cybergrcFieldDefinitions = {
   ],
 };
 
+const settingsFieldDefinitions = {
+  users: [
+    { name: "email", type: "email", required: true },
+    { name: "full_name", required: true },
+    { name: "phone" },
+    {
+      name: "organization",
+      label: "Workspace organization",
+      type: "relation",
+      relation: {
+        endpoint: "/org/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "role_ids",
+      label: "Roles",
+      type: "multirelation",
+      relation: {
+        endpoint: "/rbac/roles/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    { name: "password", type: "password", placeholder: "Temporary password" },
+    { name: "is_staff", type: "boolean" },
+    { name: "is_active", type: "boolean" },
+    { name: "is_verified", type: "boolean" },
+  ],
+  roles: [
+    { name: "name", required: true },
+    { name: "code", required: true },
+    { name: "description", type: "textarea" },
+    {
+      name: "permission_ids",
+      label: "Permissions",
+      type: "multirelation",
+      relation: {
+        endpoint: "/rbac/permissions/",
+        labelField: "name",
+        ordering: "name",
+      },
+      span: 2,
+    },
+  ],
+  sectors: [
+    { name: "code", required: true },
+    { name: "name", required: true },
+    { name: "status", type: "choice", choices: WORKFLOW_STATUS_CHOICES },
+    { name: "description", type: "textarea" },
+  ],
+  organizations: [
+    {
+      name: "organization_type",
+      label: "Organization type",
+      type: "relation",
+      relation: {
+        endpoint: "/org/organization-types/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+  ],
+  organization_types: [
+    {
+      name: "organization",
+      label: "Workspace organization",
+      type: "relation",
+      relation: {
+        endpoint: "/org/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+  ],
+  asset_types: [
+    {
+      name: "organization",
+      label: "Workspace organization",
+      type: "relation",
+      relation: {
+        endpoint: "/org/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+  ],
+  assets: [
+    {
+      name: "organization",
+      label: "Workspace organization",
+      type: "relation",
+      relation: {
+        endpoint: "/org/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+    {
+      name: "asset_type",
+      label: "Resource type",
+      type: "relation",
+      relation: {
+        endpoint: "/assets/asset-types/",
+        labelField: "name",
+        ordering: "name",
+      },
+    },
+  ],
+};
+
 export const moduleConfigs = [
+  {
+    "key": "users",
+    "label": "Users",
+    "route": "users",
+    "endpoint": "/auth/users/",
+    "permission": "accounts.view_user",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "email",
+      "full_name",
+      "phone",
+      "organization",
+      "role_ids",
+      "password",
+      "is_staff",
+      "is_active",
+      "is_verified"
+    ],
+    "fieldDefinitions": settingsFieldDefinitions.users,
+    "columns": [
+      "full_name",
+      "email",
+      "organization_name",
+      "is_staff",
+      "is_active"
+    ]
+  },
+  {
+    "key": "roles",
+    "label": "Roles",
+    "route": "roles",
+    "endpoint": "/rbac/roles/",
+    "permission": "rbac.view_role",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "name",
+      "code",
+      "description",
+      "permission_ids"
+    ],
+    "fieldDefinitions": settingsFieldDefinitions.roles,
+    "columns": [
+      "name",
+      "code",
+      "description"
+    ]
+  },
+  {
+    "key": "permissions_catalog",
+    "label": "Permissions",
+    "route": "permissions",
+    "endpoint": "/rbac/permissions/",
+    "permission": "auth.view_permission",
+    "views": [
+      "list"
+    ],
+    "columns": [
+      "app_label",
+      "codename",
+      "name"
+    ]
+  },
+  {
+    "key": "sectors",
+    "label": "Sectors",
+    "route": "sectors",
+    "endpoint": "/cybergrc/sectors/",
+    "permission": "cybergrc.view_sector",
+    "views": [
+      "list",
+      "create"
+    ],
+    "formFields": [
+      "code",
+      "name",
+      "status",
+      "description"
+    ],
+    "fieldDefinitions": settingsFieldDefinitions.sectors,
+    "fieldDefinitions": settingsFieldDefinitions.organization_types,
+    "columns": [
+      "code",
+      "name",
+      "status"
+    ]
+  },
   {
     "key": "organizations",
     "label": "Organizations",
@@ -399,6 +796,7 @@ export const moduleConfigs = [
       "phone",
       "is_active"
     ],
+    "fieldDefinitions": settingsFieldDefinitions.organizations,
     "columns": [
       "name",
       "code",
@@ -1096,6 +1494,7 @@ export const moduleConfigs = [
       "name",
       "status"
     ],
+    "fieldDefinitions": settingsFieldDefinitions.asset_types,
     "columns": [
       "code",
       "name",
@@ -1120,6 +1519,7 @@ export const moduleConfigs = [
       "name",
       "status"
     ],
+    "fieldDefinitions": settingsFieldDefinitions.assets,
     "columns": [
       "code",
       "name",
@@ -1702,7 +2102,7 @@ export const moduleConfigs = [
     "formFields": [
       "name",
       "stakeholder_type",
-      "sector",
+      "sector_ref",
       "focal_point",
       "email",
       "phone",
@@ -1729,7 +2129,7 @@ export const moduleConfigs = [
       "owner_stakeholder",
       "code",
       "name",
-      "sector",
+      "sector_ref",
       "infrastructure_type",
       "owner_name",
       "essential_service",
@@ -1859,6 +2259,7 @@ export const moduleConfigs = [
       "name",
       "asset_type",
       "priority",
+      "owner_stakeholder",
       "owner_name",
       "availability_status",
       "location",
@@ -1909,7 +2310,7 @@ export const moduleConfigs = [
     "formFields": [
       "title",
       "standard_type",
-      "target_sector",
+      "target_sector_ref",
       "status",
       "version",
       "control_focus",

@@ -50,7 +50,7 @@ def notify_review_schedule(instance, created, label):
     if getattr(instance, "status", "") in {"completed", "archived"}:
         return
 
-    broadcast_notification(f"{label} review scheduled: {instance.title} on {instance.next_review_date}")
+    broadcast_notification(f"{label} review scheduled: {instance.title} on {instance.next_review_date}", organization=getattr(instance, "organization", None))
 
 
 def notify_due_date(instance, created, label, date_field="due_date", title_attr="title"):
@@ -63,7 +63,7 @@ def notify_due_date(instance, created, label, date_field="due_date", title_attr=
         return
 
     title = getattr(instance, title_attr, str(instance))
-    broadcast_notification(f"{label} scheduled: {title} on {due_date}")
+    broadcast_notification(f"{label} scheduled: {title} on {due_date}", organization=getattr(instance, "organization", None))
 
 
 def notify_workflow_transition(instance, created, label, title_attr="title"):
@@ -75,7 +75,7 @@ def notify_workflow_transition(instance, created, label, title_attr="title"):
         return
 
     title = getattr(instance, title_attr, str(instance))
-    broadcast_notification(f"{label} {message}: {title}")
+    broadcast_notification(f"{label} {message}: {title}", organization=getattr(instance, "organization", None))
 
 
 @receiver(pre_save, sender=RiskRegisterEntry)
@@ -151,7 +151,7 @@ def notify_high_risk(sender, instance, created, **kwargs):
         return
 
     action = "registered" if created else "updated"
-    broadcast_notification(f"{instance.get_risk_level_display()} risk {action}: {instance.title}")
+    broadcast_notification(f"{instance.get_risk_level_display()} risk {action}: {instance.title}", organization=getattr(instance, "organization", None))
 
 
 @receiver(post_save, sender=SimulationExercise)
@@ -164,7 +164,7 @@ def notify_exercise_schedule(sender, instance, created, **kwargs):
         return
 
     action = "scheduled" if created else "updated"
-    broadcast_notification(f"Exercise {action}: {instance.title} on {instance.planned_date}")
+    broadcast_notification(f"Exercise {action}: {instance.title} on {instance.planned_date}", organization=getattr(instance, "organization", None))
 
 
 @receiver(post_save, sender=DeliverableMilestone)
@@ -177,16 +177,16 @@ def notify_deliverable_deadline(sender, instance, created, **kwargs):
         return
 
     action = "tracked" if created else "updated"
-    broadcast_notification(f"Deliverable {action}: {instance.title} due on {instance.due_date}")
+    broadcast_notification(f"Deliverable {action}: {instance.title} due on {instance.due_date}", organization=getattr(instance, "organization", None))
 
 
 @receiver(post_save, sender=CriticalInfrastructure)
 def notify_mapping_progress(sender, instance, created, **kwargs):
     if instance.mapping_status in {"mapped", "reviewed"} and field_changed(instance, "mapping_status", created):
-        broadcast_notification(f"Infrastructure mapping updated: {instance.name} is {instance.get_mapping_status_display().lower()}")
+        broadcast_notification(f"Infrastructure mapping updated: {instance.name} is {instance.get_mapping_status_display().lower()}", organization=getattr(instance, "organization", None))
 
     if instance.designation_status in {"designated", "validated"} and field_changed(instance, "designation_status", created):
-        broadcast_notification(f"Infrastructure designation updated: {instance.name} is {instance.get_designation_status_display().lower()}")
+        broadcast_notification(f"Infrastructure designation updated: {instance.name} is {instance.get_designation_status_display().lower()}", organization=getattr(instance, "organization", None))
 
 
 @receiver(post_save, sender=GovernanceArtifact)
@@ -206,12 +206,12 @@ def notify_consultation_activity(sender, instance, created, **kwargs):
     if instance.planned_date and instance.status in {"planned", "in_progress", "active"} and (
         field_changed(instance, "planned_date", created) or field_changed(instance, "status", created)
     ):
-        broadcast_notification(f"Consultation scheduled: {instance.title} on {instance.planned_date}")
+        broadcast_notification(f"Consultation scheduled: {instance.title} on {instance.planned_date}", organization=getattr(instance, "organization", None))
 
     if instance.next_follow_up_date and (
         field_changed(instance, "next_follow_up_date", created) or field_changed(instance, "status", created)
     ) and instance.status not in {"completed", "archived"}:
-        broadcast_notification(f"Consultation follow-up due: {instance.title} on {instance.next_follow_up_date}")
+        broadcast_notification(f"Consultation follow-up due: {instance.title} on {instance.next_follow_up_date}", organization=getattr(instance, "organization", None))
 
     notify_workflow_transition(instance, created, "Consultation")
 
@@ -221,7 +221,7 @@ def notify_capacity_activity(sender, instance, created, **kwargs):
     notify_due_date(instance, created, "Capacity assessment")
 
     if instance.gap_level in {"high", "critical"} and field_changed(instance, "gap_level", created):
-        broadcast_notification(f"Capacity gap identified: {instance.title} is {instance.get_gap_level_display().lower()}")
+        broadcast_notification(f"Capacity gap identified: {instance.title} is {instance.get_gap_level_display().lower()}", organization=getattr(instance, "organization", None))
 
     notify_workflow_transition(instance, created, "Capacity assessment")
 
@@ -256,6 +256,6 @@ def notify_action_plan_activity(sender, instance, created, **kwargs):
     if instance.blocker_summary and (
         field_changed(instance, "blocker_summary", created) or field_changed(instance, "status", created)
     ) and instance.status not in {"completed", "archived"}:
-        broadcast_notification(f"Action plan blocker flagged: {instance.title}")
+        broadcast_notification(f"Action plan blocker flagged: {instance.title}", organization=getattr(instance, "organization", None))
 
     notify_workflow_transition(instance, created, "Action plan task")

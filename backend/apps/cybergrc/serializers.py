@@ -14,6 +14,7 @@ from .models import (
     EmergencyResponseAsset,
     GovernanceArtifact,
     RiskRegisterEntry,
+    Sector,
     SimulationExercise,
     Stakeholder,
     StakeholderConsultation,
@@ -34,22 +35,66 @@ def validate_same_organization(attrs, instance, relation_names):
         raise serializers.ValidationError(errors)
 
 
+def apply_relation_name_fallback(attrs, instance, relation_name, target_field_name, source_attribute="name"):
+    related = attrs.get(relation_name, getattr(instance, relation_name, None))
+    if related:
+        attrs[target_field_name] = getattr(related, source_attribute, "") or ""
+    return attrs
+
+
+class SectorSerializer(AuditFieldsSerializerMixin):
+    class Meta:
+        model = Sector
+        fields = "__all__"
+
+
 class StakeholderSerializer(AuditFieldsSerializerMixin):
+    sector_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Stakeholder
         fields = "__all__"
 
+    def get_sector_name(self, obj):
+        return getattr(getattr(obj, "sector_ref", None), "name", None) or obj.sector or ""
+
+    def validate(self, attrs):
+        validate_same_organization(attrs, self.instance, ["sector_ref"])
+        return attrs
+
+    def create(self, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, None, "sector_ref", "sector")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, instance, "sector_ref", "sector")
+        return super().update(instance, validated_data)
+
 
 class CriticalInfrastructureSerializer(AuditFieldsSerializerMixin):
     owner_stakeholder_name = serializers.CharField(source="owner_stakeholder.name", read_only=True)
+    sector_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CriticalInfrastructure
         fields = "__all__"
 
+    def get_sector_name(self, obj):
+        return getattr(getattr(obj, "sector_ref", None), "name", None) or obj.sector or ""
+
     def validate(self, attrs):
-        validate_same_organization(attrs, self.instance, ["owner_stakeholder"])
+        validate_same_organization(attrs, self.instance, ["owner_stakeholder", "sector_ref"])
         return attrs
+
+    def create(self, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, None, "owner_stakeholder", "owner_name")
+        validated_data = apply_relation_name_fallback(validated_data, None, "sector_ref", "sector")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, instance, "owner_stakeholder", "owner_name")
+        validated_data = apply_relation_name_fallback(validated_data, instance, "sector_ref", "sector")
+        return super().update(instance, validated_data)
 
 
 class GovernanceArtifactSerializer(AuditFieldsSerializerMixin):
@@ -125,14 +170,23 @@ class ContingencyPlanSerializer(AuditFieldsSerializerMixin):
 class EmergencyResponseAssetSerializer(AuditFieldsSerializerMixin):
     contingency_plan_title = serializers.CharField(source="contingency_plan.title", read_only=True)
     infrastructure_name = serializers.CharField(source="infrastructure.name", read_only=True)
+    owner_stakeholder_name = serializers.CharField(source="owner_stakeholder.name", read_only=True)
 
     class Meta:
         model = EmergencyResponseAsset
         fields = "__all__"
 
     def validate(self, attrs):
-        validate_same_organization(attrs, self.instance, ["contingency_plan", "infrastructure"])
+        validate_same_organization(attrs, self.instance, ["contingency_plan", "infrastructure", "owner_stakeholder"])
         return attrs
+
+    def create(self, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, None, "owner_stakeholder", "owner_name")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, instance, "owner_stakeholder", "owner_name")
+        return super().update(instance, validated_data)
 
 
 class SimulationExerciseSerializer(AuditFieldsSerializerMixin):
@@ -148,9 +202,26 @@ class SimulationExerciseSerializer(AuditFieldsSerializerMixin):
 
 
 class CyberStandardSerializer(AuditFieldsSerializerMixin):
+    target_sector_name = serializers.SerializerMethodField()
+
     class Meta:
         model = CyberStandard
         fields = "__all__"
+
+    def get_target_sector_name(self, obj):
+        return getattr(getattr(obj, "target_sector_ref", None), "name", None) or obj.target_sector or ""
+
+    def validate(self, attrs):
+        validate_same_organization(attrs, self.instance, ["target_sector_ref"])
+        return attrs
+
+    def create(self, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, None, "target_sector_ref", "target_sector")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data = apply_relation_name_fallback(validated_data, instance, "target_sector_ref", "target_sector")
+        return super().update(instance, validated_data)
 
 
 class AuditFrameworkSerializer(AuditFieldsSerializerMixin):

@@ -1,22 +1,25 @@
-﻿import { Check } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 
-const CALENDAR_WEEKDAYS = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
+const CALENDAR_WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const CALENDAR_MONTH_NAMES = [
-  "Janvier",
-  "Fevrier",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Aout",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Decembre",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
+const SELECT_MENU_MAX_HEIGHT_CLASS = "max-h-[24.5rem] overflow-y-auto pr-1";
+const SELECT_MENU_ITEMS_MAX_HEIGHT_CLASS = "max-h-[20.75rem] overflow-y-auto pr-1";
+const SELECT_SEARCH_THRESHOLD = 10;
 
 function DateTriggerIcon({ className = "" }) {
   return (
@@ -59,9 +62,31 @@ function resolveChoiceLabel(choices, value) {
   return matched?.display_name || matched?.label || (value ? String(value) : "");
 }
 
+function resolveChoiceLabels(choices, values) {
+  if (!Array.isArray(values)) return [];
+  return values
+    .map((value) => resolveChoiceLabel(choices, value))
+    .filter(Boolean);
+}
+
+function getChoiceText(choice) {
+  return choice?.display_name || choice?.label || String(choice?.value ?? "");
+}
+
+function filterChoiceList(choices, searchTerm) {
+  const normalizedSearch = String(searchTerm || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedSearch) return choices;
+
+  return choices.filter((choice) => getChoiceText(choice).toLowerCase().includes(normalizedSearch));
+}
+
 function getInputType(field) {
   if (field.type === "date") return "date";
   if (field.type === "datetime") return "datetime-local";
+  if (field.type === "password") return "password";
   if (["integer", "decimal", "float", "number"].includes(field.type)) return "number";
   if (field.type === "email" || field.name === "email") return "email";
   if (field.type === "url") return "url";
@@ -151,20 +176,38 @@ function buildCalendarWeeks(displayedCalendarMonth, selectedDate) {
   return weeks;
 }
 
+function toggleArrayValue(values, nextValue) {
+  const current = Array.isArray(values) ? values.map(String) : [];
+  const normalizedValue = String(nextValue);
+  return current.includes(normalizedValue)
+    ? current.filter((item) => item !== normalizedValue)
+    : [...current, normalizedValue];
+}
+
 export default function CrudField({ field, value, error, onChange, appearance = "default" }) {
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [optionSearch, setOptionSearch] = useState("");
   const interactiveRef = useRef(null);
   const choiceList = useMemo(() => toChoiceList(field.choices), [field.choices]);
+  const isRelationField = field.type === "relation";
+  const isMultiRelationField = field.type === "multirelation";
+  const isSelectableField = isRelationField || choiceList.length > 0;
   const label = field.label || toLabel(field.name);
   const placeholder = field.placeholder || label;
   const helperText = field.helperText || field.help_text || field.helpText;
-  const isWide = field.type === "textarea" || field.name === "description" || field.name === "comments" || field.span === 2;
+  const isWide = field.type === "textarea" || field.type === "multirelation" || field.name === "description" || field.name === "comments" || field.span === 2;
   const isEditorial = appearance === "editorial";
   const inputType = getInputType(field);
-  const Component = isWide ? "textarea" : "input";
+  const Component = isWide && field.type !== "password" && field.type !== "multirelation" ? "textarea" : "input";
   const isEditorialDate = isEditorial && field.type === "date";
   const selectedDate = useMemo(() => parseDateValue(value), [value]);
+  const selectedMultiLabels = useMemo(() => resolveChoiceLabels(choiceList, value), [choiceList, value]);
+  const shouldEnableChoiceSearch = choiceList.length > SELECT_SEARCH_THRESHOLD;
+  const filteredChoiceList = useMemo(
+    () => (shouldEnableChoiceSearch ? filterChoiceList(choiceList, optionSearch) : choiceList),
+    [choiceList, optionSearch, shouldEnableChoiceSearch],
+  );
   const [displayedCalendarMonth, setDisplayedCalendarMonth] = useState(() => {
     const initialDate = parseDateValue(value) || new Date();
     return new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
@@ -201,6 +244,12 @@ export default function CrudField({ field, value, error, onChange, appearance = 
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isDatePickerOpen, isSelectOpen]);
+
+  useEffect(() => {
+    if (!isSelectOpen) {
+      setOptionSearch("");
+    }
+  }, [field.name, isSelectOpen]);
 
   function openDatePicker() {
     const baseDate = selectedDate || new Date();
@@ -278,8 +327,130 @@ export default function CrudField({ field, value, error, onChange, appearance = 
     );
   }
 
-  if (choiceList.length && isEditorial) {
+  if (isMultiRelationField && isEditorial) {
+    const emptyChoiceLabel = field.relationLoading ? "Loading options..." : field.relationError ? "Unable to load options" : placeholder || "Select";
+    const selectedValues = Array.isArray(value) ? value.map(String) : [];
+    const selectedLabel = selectedMultiLabels.length ? `${selectedMultiLabels.length} selected` : emptyChoiceLabel;
+    const visibleChoices = shouldEnableChoiceSearch ? filteredChoiceList : choiceList;
+    const emptyStateLabel = shouldEnableChoiceSearch && optionSearch.trim() ? "No matching options" : emptyChoiceLabel;
+    const fieldShellClassName = error ? "shadow-[inset_0_0_0_1px_rgba(166,61,52,0.24)]" : "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.04)]";
+    const fieldFocusClassName = error
+      ? "focus-visible:shadow-[inset_0_0_0_1px_rgba(166,61,52,0.28),0_0_0_2px_rgba(166,61,52,0.05)]"
+      : "focus-visible:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.12),0_0_0_2px_rgba(17,17,17,0.045)]";
+    const fieldActiveClassName = isSelectOpen
+      ? error
+        ? "shadow-[inset_0_0_0_1px_rgba(166,61,52,0.28),0_0_0_2px_rgba(166,61,52,0.05)]"
+        : "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.12),0_0_0_2px_rgba(17,17,17,0.045)]"
+      : "";
+
+    return (
+      <div className={`space-y-2.5 ${isWide ? "md:col-span-2" : ""}`}>
+        <div className="space-y-1">
+          <label className="text-[12px] font-medium text-black/72 ml-3">
+            {label}
+            {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
+          </label>
+          {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+        </div>
+
+        <div ref={interactiveRef} className="relative">
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={isSelectOpen}
+            onClick={() => {
+              setIsDatePickerOpen(false);
+              setIsSelectOpen((open) => !open);
+            }}
+            className={`flex min-h-[48px] w-full items-center justify-between gap-4 rounded-[24px] bg-white px-6 py-3 text-left text-[0.88rem] font-medium outline-none transition hover:bg-white ${fieldShellClassName} ${fieldFocusClassName} ${fieldActiveClassName}`}
+          >
+            <span className={selectedMultiLabels.length ? "text-black" : "text-black/28"}>{selectedLabel}</span>
+            <FiChevronDown size={16} className={`shrink-0 text-black/62 transition ${isSelectOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+
+          {isSelectOpen ? (
+            <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-20 rounded-[20px] bg-[#ffffff] p-2 shadow-[0_18px_34px_rgba(17,17,17,0.06)]">
+              {shouldEnableChoiceSearch ? (
+                <div className="px-1 pb-2">
+                  <div className="relative">
+                    <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black/36" aria-hidden="true" />
+                    <input
+                      type="text"
+                      value={optionSearch}
+                      autoFocus
+                      onChange={(event) => setOptionSearch(event.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      placeholder={`Search ${label.toLowerCase()}...`}
+                      className="h-10 w-full rounded-[14px] bg-[#f7f5f1] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className={shouldEnableChoiceSearch ? SELECT_MENU_ITEMS_MAX_HEIGHT_CLASS : SELECT_MENU_MAX_HEIGHT_CLASS}>
+                {visibleChoices.length ? (
+                  visibleChoices.map((choice) => {
+                    const isSelected = selectedValues.includes(String(choice.value));
+
+                    return (
+                      <button
+                        key={`${field.name}-${choice.value}`}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          onChange(field.name, toggleArrayValue(value, choice.value));
+                          setIsSelectOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
+                          isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                        }`}
+                      >
+                        <span>{getChoiceText(choice)}</span>
+                        {isSelected ? <FiCheck size={14} aria-hidden="true" /> : null}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-2.5 text-sm text-black/42">{emptyStateLabel}</div>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {selectedValues.length ? (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {selectedValues.map((selectedValue) => {
+              const selectedChoiceLabel = resolveChoiceLabel(choiceList, selectedValue) || selectedValue;
+
+              return (
+                <button
+                  key={`${field.name}-selected-${selectedValue}`}
+                  type="button"
+                  onClick={() => onChange(field.name, toggleArrayValue(value, selectedValue))}
+                  className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-2 text-[0.8rem] font-medium text-black shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f8f6f2]"
+                  title={selectedChoiceLabel}
+                >
+                  <span className="truncate">{selectedChoiceLabel}</span>
+                  <X size={12} className="shrink-0 text-black/58" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {error ? <p className="text-sm text-[#a63d34]">{error}</p> : null}
+      </div>
+    );
+  }
+
+  if (isSelectableField && isEditorial) {
     const selectedLabel = resolveChoiceLabel(choiceList, value);
+    const visibleChoices = shouldEnableChoiceSearch ? filteredChoiceList : choiceList;
+    const emptyChoiceLabel = field.relationLoading ? "Loading options..." : field.relationError ? "Unable to load options" : placeholder || "Select";
+    const emptyStateLabel = shouldEnableChoiceSearch && optionSearch.trim() ? "No matching options" : emptyChoiceLabel;
     const fieldShellClassName = error ? "shadow-[inset_0_0_0_1px_rgba(166,61,52,0.24)]" : "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.04)]";
     const fieldFocusClassName = error
       ? "focus-visible:shadow-[inset_0_0_0_1px_rgba(166,61,52,0.28),0_0_0_2px_rgba(166,61,52,0.05)]"
@@ -311,34 +482,58 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             }}
             className={`flex min-h-[48px] w-full items-center justify-between gap-4 rounded-[99px] bg-white px-6 py-3 text-left text-[0.88rem] font-medium outline-none transition hover:bg-white ${fieldShellClassName} ${fieldFocusClassName} ${fieldActiveClassName}`}
           >
-            <span className={selectedLabel ? "text-black" : "text-black/28"}>{selectedLabel || "Selectionner"}</span>
+            <span className={selectedLabel ? "text-black" : "text-black/28"}>{selectedLabel || emptyChoiceLabel}</span>
             <FiChevronDown size={16} className={`shrink-0 text-black/62 transition ${isSelectOpen ? "rotate-180" : ""}`} aria-hidden="true" />
           </button>
 
           {isSelectOpen ? (
-            <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-20 overflow-hidden rounded-[20px] bg-[#ffffff] p-2 shadow-[0_18px_34px_rgba(17,17,17,0.06)]">
-              {choiceList.map((choice) => {
-                const isSelected = String(choice.value) === String(value ?? "");
+            <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-20 rounded-[20px] bg-[#ffffff] p-2 shadow-[0_18px_34px_rgba(17,17,17,0.06)]">
+              {shouldEnableChoiceSearch ? (
+                <div className="px-1 pb-2">
+                  <div className="relative">
+                    <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black/36" aria-hidden="true" />
+                    <input
+                      type="text"
+                      value={optionSearch}
+                      autoFocus
+                      onChange={(event) => setOptionSearch(event.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                      placeholder={`Search ${label.toLowerCase()}...`}
+                      className="h-10 w-full rounded-[14px] bg-[#f7f5f1] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                    />
+                  </div>
+                </div>
+              ) : null}
 
-                return (
-                  <button
-                    key={`${field.name}-${choice.value}`}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
-                      onChange(field.name, String(choice.value));
-                      setIsSelectOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-regular transition ${
-                      isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
-                    }`}
-                  >
-                    <span>{choice.display_name || choice.label || String(choice.value)}</span>
-                    {isSelected ? <FiCheck size={14} aria-hidden="true" /> : null}
-                  </button>
-                );
-              })}
+              <div className={shouldEnableChoiceSearch ? SELECT_MENU_ITEMS_MAX_HEIGHT_CLASS : SELECT_MENU_MAX_HEIGHT_CLASS}>
+                {visibleChoices.length ? (
+                  visibleChoices.map((choice) => {
+                    const isSelected = String(choice.value) === String(value ?? "");
+
+                    return (
+                      <button
+                        key={`${field.name}-${choice.value}`}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          onChange(field.name, String(choice.value));
+                          setIsSelectOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
+                          isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                        }`}
+                      >
+                        <span>{getChoiceText(choice)}</span>
+                        {isSelected ? <FiCheck size={14} aria-hidden="true" /> : null}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-2.5 text-sm text-black/42">{emptyStateLabel}</div>
+                )}
+              </div>
             </div>
           ) : null}
         </div>
@@ -348,13 +543,41 @@ export default function CrudField({ field, value, error, onChange, appearance = 
     );
   }
 
-  if (choiceList.length) {
+  if (isMultiRelationField) {
+    const selectedValues = Array.isArray(value) ? value.map(String) : [];
+
+    return (
+      <div className={`space-y-2 ${isWide ? "md:col-span-2" : ""}`}>
+        <label className="text-sm font-medium text-slate-700">{label}</label>
+        {helperText ? <p className="text-sm leading-6 text-slate-500">{helperText}</p> : null}
+        <div className={`app-input min-h-[56px] rounded-[18px] px-3 py-3 ${SELECT_MENU_MAX_HEIGHT_CLASS}`}>
+          {choiceList.map((choice) => {
+            const isSelected = selectedValues.includes(String(choice.value));
+            return (
+              <label key={`${field.name}-${choice.value}`} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2 hover:bg-black/[0.04]">
+                <span className="text-sm text-slate-700">{choice.display_name || choice.label || String(choice.value)}</span>
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onChange(field.name, toggleArrayValue(value, choice.value))}
+                  className="h-4 w-4 rounded accent-[#111111]"
+                />
+              </label>
+            );
+          })}
+        </div>
+        {error ? <p className="text-sm text-[#a63d34]">{error}</p> : null}
+      </div>
+    );
+  }
+
+  if (isSelectableField) {
     return (
       <div className={`space-y-2 ${isWide ? "md:col-span-2" : ""}`}>
         <label className="text-sm font-medium text-slate-700">{label}</label>
         {helperText ? <p className="text-sm leading-6 text-slate-500">{helperText}</p> : null}
         <select className="app-input min-h-[56px] appearance-none" value={value ?? ""} onChange={(event) => onChange(field.name, event.target.value)}>
-          <option value="">Selectionner</option>
+          <option value="">{field.relationLoading ? "Loading options..." : field.relationError ? "Unable to load options" : "Select"}</option>
           {choiceList.map((choice) => (
             <option key={`${field.name}-${choice.value}`} value={String(choice.value)}>
               {choice.display_name || choice.label || String(choice.value)}
@@ -394,7 +617,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             type="text"
             readOnly
             value={displayedDateValue}
-            placeholder="JJ/MM/AAAA"
+            placeholder="DD/MM/YYYY"
             onClick={openDatePicker}
             onFocus={openDatePicker}
             className={`w-full bg-white px-6 py-2 pr-14 text-[14px] text-black placeholder:text-black/28 outline-none transition min-h-[48px] rounded-[99px] ${fieldShellClassName} ${fieldFocusClassName} ${fieldActiveClassName}`}
@@ -402,7 +625,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
 
           <button
             type="button"
-            aria-label={`Selectionner ${label}`}
+            aria-label={`Select ${label}`}
             onClick={toggleDatePicker}
             className="absolute right-[0.62rem] top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-black/62 transition hover:bg-black/[0.05] hover:text-black"
           >
@@ -410,7 +633,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
           </button>
 
           {isDatePickerOpen ? (
-            <div role="dialog" aria-label={`Calendrier ${label}`} className="absolute bottom-[calc(100%+0.55rem)] right-0 z-30 w-[16.5rem] rounded-[1rem] border border-black/[0.08] bg-white p-[0.9rem] shadow-[0_20px_45px_rgba(17,17,17,0.12)]">
+            <div role="dialog" aria-label={`Calendar ${label}`} className="absolute bottom-[calc(100%+0.55rem)] right-0 z-30 w-[16.5rem] rounded-[1rem] border border-black/[0.08] bg-white p-[0.9rem] shadow-[0_20px_45px_rgba(17,17,17,0.12)]">
               <div className="mb-3 flex items-center justify-between gap-2.5">
                 <button
                   type="button"

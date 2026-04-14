@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, ClipboardList, Folder, MapPin, Shield, Target } from "lucide-react";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Activity, ClipboardList, Folder, MapPin, Settings, Shield, Target } from "lucide-react";
 import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Link, useSearchParams } from "react-router-dom";
 import PageHeader from "../components/crud/PageHeader";
@@ -36,10 +36,50 @@ const ENHANCED_PAGINATION_MODULE_KEYS = new Set([
 ]);
 const ENHANCED_PAGINATION_DEFAULT_PAGE_SIZE = 10;
 const STANDARD_PAGE_SIZE = 20;
+const RELATION_OPTION_PAGE_SIZE = 200;
+const RELATION_OPTION_MAX_PAGES = 5;
+const SETTINGS_ONLY_FORM_MODULE_KEYS = new Set(["users", "roles", "sectors", "organizations", "organization_types", "asset_types", "assets"]);
 
 function getExtendedPageSize(activeMode, pageSize) {
   const baseline = activeMode === "workflow" ? 80 : 60;
   return Math.max(pageSize || 0, baseline);
+}
+
+function resolveRelationOptionLabel(item, labelField) {
+  if (labelField && item?.[labelField]) return item[labelField];
+
+  return item?.name || item?.title || item?.code || item?.label || (item?.id ? `#${item.id}` : "");
+}
+
+async function fetchRelationChoices(relation) {
+  if (!relation?.endpoint) return [];
+
+  const choices = [];
+
+  for (let pageIndex = 1; pageIndex <= RELATION_OPTION_MAX_PAGES; pageIndex += 1) {
+    const response = await api.get(relation.endpoint, {
+      params: {
+        page: pageIndex,
+        page_size: RELATION_OPTION_PAGE_SIZE,
+        ordering: relation.ordering || relation.labelField || "name",
+      },
+    });
+    const payload = response.data;
+    const results = Array.isArray(payload?.results) ? payload.results : Array.isArray(payload) ? payload : [];
+
+    choices.push(
+      ...results
+        .filter((item) => item?.id != null)
+        .map((item) => ({
+          value: item.id,
+          display_name: resolveRelationOptionLabel(item, relation.labelField),
+        })),
+    );
+
+    if (!payload?.next || !Array.isArray(payload?.results)) break;
+  }
+
+  return choices;
 }
 
 function isReportMode(mode) {
@@ -232,21 +272,65 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const updateMutation = useUpdateItem(config?.key, config?.endpoint, `${config?.label} updated`);
   const deleteMutation = useDeleteItem(config?.key, config?.endpoint, `${config?.label} deleted`);
 
-  const formFields = useMemo(() => buildFieldList(config, metadata), [config, metadata]);
+  const baseFormFields = useMemo(() => buildFieldList(config, metadata), [config, metadata]);
+  const relationFields = useMemo(() => baseFormFields.filter((field) => field.relation?.endpoint), [baseFormFields]);
+  const relationQueries = useQueries({
+    queries: relationFields.map((field) => ({
+      queryKey: [config?.key, "relation-options", field.name, field.relation?.endpoint],
+      queryFn: async () => fetchRelationChoices(field.relation),
+      enabled: Boolean(field.relation?.endpoint) && shouldLoadMetadata,
+      staleTime: 60000,
+      refetchOnWindowFocus: false,
+    })),
+  });
+  const formFields = useMemo(() => {
+    if (!relationFields.length) return baseFormFields;
+
+    const relationStates = new Map(
+      relationFields.map((field, index) => [field.name, relationQueries[index] || {}]),
+    );
+
+    return baseFormFields.map((field) => {
+      if (!field.relation?.endpoint) return field;
+
+      const relationState = relationStates.get(field.name) || {};
+      const relationPlaceholder = relationState.isLoading
+        ? `Loading ${String(field.label || field.name || "options").toLowerCase()}...`
+        : relationState.isError
+          ? `Unable to load ${String(field.label || field.name || "options").toLowerCase()}`
+          : field.placeholder;
+
+      return {
+        ...field,
+        type: field.type === "multirelation" ? "multirelation" : "relation",
+        choices: relationState.data || [],
+        placeholder: relationPlaceholder,
+        relationLoading: Boolean(relationState.isLoading),
+        relationError: Boolean(relationState.isError),
+      };
+    });
+  }, [baseFormFields, relationFields, relationQueries]);
   const modePresentation = useMemo(() => getModePresentation(config, activeMode), [activeMode, config]);
   const SectionHeaderIcon = useMemo(() => getModuleSectionIcon(config?.key), [config?.key]);
   const baseFormPresentation = useMemo(() => getFormPresentation(config), [config]);
   const workflowBlueprint = useMemo(() => getWorkflowBlueprint(config), [config]);
+  const formIcon = useMemo(() => {
+    if (SETTINGS_ONLY_FORM_MODULE_KEYS.has(config?.key)) {
+      return <Settings size={18} strokeWidth={2.15} />;
+    }
+
+    return SectionHeaderIcon ? <SectionHeaderIcon size={18} strokeWidth={2.15} /> : null;
+  }, [SectionHeaderIcon, config?.key]);
   const formPresentation = useMemo(
     () => ({
       variant: "editorial",
       eyebrow: getModuleFormEyebrow(config?.key),
       sectionLabel: `${config?.label || "Record"} file`,
       ...(baseFormPresentation || {}),
-      icon: SectionHeaderIcon ? <SectionHeaderIcon size={18} strokeWidth={2.15} /> : null,
+      icon: formIcon,
       mode: activeMode,
     }),
-    [SectionHeaderIcon, activeMode, baseFormPresentation, config?.key, config?.label],
+    [activeMode, baseFormPresentation, config?.key, config?.label, formIcon],
   );
   const workflowField = moduleBehavior.workflowField || formFields.find((field) => ["status", "mapping_status", "treatment_status", "availability_status"].includes(field.name))?.name || null;
   const workflowFieldConfig = formFields.find((field) => field.name === workflowField);
@@ -356,10 +440,12 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
       ? formPresentation?.editTitle || `Edit ${config.label.toLowerCase()}`
       : formPresentation?.createTitle || `Create ${config.label.toLowerCase()}`;
 
+  const formFieldSignature = useMemo(() => baseFormFields.map((field) => field.name).join("|"), [baseFormFields]);
+
   useEffect(() => {
     setFormValues(buildInitialValues(formFields, editingItem));
     setFormErrors({});
-  }, [formFields, editingItem]);
+  }, [editingItem, formFieldSignature]);
 
   useEffect(() => {
     setEditingItem(null);

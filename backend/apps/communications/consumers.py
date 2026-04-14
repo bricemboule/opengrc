@@ -1,21 +1,33 @@
 import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "global_notifications"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        user = self.scope.get("user")
+        if not user or not user.is_authenticated:
+            await self.close(code=4401)
+            return
+
+        self.global_group_name = "global_notifications"
+        self.user_group_name = f"notifications_user_{user.id}"
+
+        await self.channel_layer.group_add(self.global_group_name, self.channel_name)
+        await self.channel_layer.group_add(self.user_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if hasattr(self, "global_group_name"):
+            await self.channel_layer.group_discard(self.global_group_name, self.channel_name)
+        if hasattr(self, "user_group_name"):
+            await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data.get("message", "")
-        await self.channel_layer.group_send(
-            self.group_name, {"type": "broadcast_notification", "message": message}
-        )
+        return None
 
     async def broadcast_notification(self, event):
-        await self.send(text_data=json.dumps({"message": event["message"]}))
+        payload = event.get("notification") or {}
+        if not payload and event.get("message"):
+            payload = {"message": event["message"]}
+        await self.send(text_data=json.dumps(payload))

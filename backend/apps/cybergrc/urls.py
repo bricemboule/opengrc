@@ -14,6 +14,7 @@ from .views import (
     EmergencyResponseAssetViewSet,
     GovernanceArtifactViewSet,
     RiskRegisterEntryViewSet,
+    SectorViewSet,
     SimulationExerciseViewSet,
     StakeholderConsultationViewSet,
     StakeholderViewSet,
@@ -21,6 +22,7 @@ from .views import (
 )
 
 router = DefaultRouter()
+router.register("sectors", SectorViewSet, basename="cybergrc-sectors")
 router.register("stakeholders", StakeholderViewSet, basename="cybergrc-stakeholders")
 router.register("critical-infrastructure", CriticalInfrastructureViewSet, basename="cybergrc-critical-infrastructure")
 router.register("governance-artifacts", GovernanceArtifactViewSet, basename="cybergrc-governance-artifacts")

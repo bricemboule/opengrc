@@ -176,10 +176,31 @@ class DeliverableCategory(models.TextChoices):
     TEMPLATE = "template", "Template"
 
 
+class Sector(SoftDeleteAuditModel):
+    organization = models.ForeignKey("org.Organization", on_delete=models.CASCADE, related_name="cybergrc_sectors")
+    code = models.CharField(max_length=80, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=50, choices=WorkflowStatus.choices, default=WorkflowStatus.ACTIVE)
+
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self):
+        return self.name
+
+
 class Stakeholder(SoftDeleteAuditModel):
     organization = models.ForeignKey("org.Organization", on_delete=models.CASCADE, related_name="cybergrc_stakeholders")
     name = models.CharField(max_length=255)
     stakeholder_type = models.CharField(max_length=50, choices=StakeholderType.choices, default=StakeholderType.GOVERNMENT)
+    sector_ref = models.ForeignKey(
+        Sector,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stakeholders",
+    )
     sector = models.CharField(max_length=120, blank=True)
     focal_point = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
@@ -206,6 +227,13 @@ class CriticalInfrastructure(SoftDeleteAuditModel):
     )
     code = models.CharField(max_length=80, unique=True)
     name = models.CharField(max_length=255)
+    sector_ref = models.ForeignKey(
+        Sector,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="critical_infrastructure",
+    )
     sector = models.CharField(max_length=120)
     infrastructure_type = models.CharField(max_length=20, choices=InfrastructureType.choices, default=InfrastructureType.CII)
     owner_name = models.CharField(max_length=255, blank=True)
@@ -444,6 +472,13 @@ class EmergencyResponseAsset(SoftDeleteAuditModel):
     name = models.CharField(max_length=255)
     asset_type = models.CharField(max_length=30, choices=EmergencyAssetType.choices, default=EmergencyAssetType.DIGITAL)
     priority = models.CharField(max_length=20, choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)
+    owner_stakeholder = models.ForeignKey(
+        Stakeholder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="emergency_response_assets",
+    )
     owner_name = models.CharField(max_length=255, blank=True)
     availability_status = models.CharField(max_length=30, choices=AvailabilityStatus.choices, default=AvailabilityStatus.PLANNED)
     location = models.CharField(max_length=255, blank=True)
@@ -486,6 +521,13 @@ class CyberStandard(SoftDeleteAuditModel):
     organization = models.ForeignKey("org.Organization", on_delete=models.CASCADE, related_name="cybergrc_standards")
     title = models.CharField(max_length=255)
     standard_type = models.CharField(max_length=50, choices=StandardType.choices, default=StandardType.ISP_EQUIPMENT)
+    target_sector_ref = models.ForeignKey(
+        Sector,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cyber_standards",
+    )
     target_sector = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=50, choices=WorkflowStatus.choices, default=WorkflowStatus.DRAFT)
     version = models.CharField(max_length=50, blank=True)

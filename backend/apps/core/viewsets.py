@@ -1,8 +1,16 @@
 from rest_framework.viewsets import ModelViewSet
+
+from .action_permissions import ActionPermission
 from .mixins import AuditLogMixin
 
+
 class AuditModelViewSet(AuditLogMixin, ModelViewSet):
-    pass
+    def get_permissions(self):
+        permission_classes = list(getattr(self, "permission_classes", []))
+        if not any(isinstance(permission_class, type) and issubclass(permission_class, ActionPermission) for permission_class in permission_classes):
+            permission_classes.append(ActionPermission)
+        return [permission_class() for permission_class in permission_classes]
+
 
 class SoftDeleteAuditModelViewSet(AuditModelViewSet):
     organization_field = "organization"

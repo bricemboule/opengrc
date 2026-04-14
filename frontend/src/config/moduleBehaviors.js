@@ -21,7 +21,7 @@ const STAKEHOLDER_FORM_PRESENTATION = {
     {
       title: "Stakeholder identity",
       description: "Define the institution and its place in the cyber governance and coordination setup.",
-      fields: ["name", "stakeholder_type", "sector", "status"],
+      fields: ["name", "stakeholder_type", "sector_ref", "status"],
     },
     {
       title: "Primary coordination contact",
@@ -221,7 +221,7 @@ const WORKFLOW_BLUEPRINTS = {
   emergency_response_assets: createWorkflowBlueprint({
     objective: "Keep emergency assets visible, assigned, and ready for activation.",
     contextFields: ["asset_type", "priority", "location"],
-    ownerFields: ["owner_name"],
+    ownerFields: ["owner_stakeholder_name", "owner_name"],
     blockerRules: [
       { when: (row) => row.availability_status === "constrained", label: "Asset is constrained" },
       { when: (row) => row.availability_status === "unavailable", label: "Asset is unavailable" },

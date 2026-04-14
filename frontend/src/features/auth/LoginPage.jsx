@@ -6,6 +6,25 @@ import { setAuth } from "./authSlice";
 import BrandLogo from "../../components/brand/BrandLogo";
 import loginHeroServer from "../../assets/login-hero-server.jpg";
 
+function normalizeLoginErrorMessage(message, hasResponse) {
+  const normalizedMessage = String(message || "").trim();
+
+  if (!normalizedMessage) {
+    return hasResponse ? "Connection failed." : "Unable to reach the login API.";
+  }
+
+  const loweredMessage = normalizedMessage.toLowerCase();
+  if (loweredMessage === "connexion echouee." || loweredMessage === "connexion echouee") {
+    return "Connection failed.";
+  }
+
+  if (loweredMessage === "impossible de joindre l api de connexion." || loweredMessage === "impossible de joindre l api de connexion") {
+    return "Unable to reach the login API.";
+  }
+
+  return normalizedMessage;
+}
+
 function Field({ label, type, placeholder, value, onChange }) {
   return (
     <div className="space-y-3">
@@ -33,12 +52,7 @@ export default function LoginPage() {
       dispatch(setAuth(data.user));
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err?.response?.data?.detail ||
-          err?.response?.data?.non_field_errors?.[0] ||
-          err?.response?.data?.non_field_errors ||
-          (err?.response ? "Connexion echouee." : "Impossible de joindre l API de connexion."),
-      );
+      setError(normalizeLoginErrorMessage(err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0] || err?.response?.data?.non_field_errors, Boolean(err?.response)));
     } finally {
       setLoading(false);
     }
@@ -56,35 +70,21 @@ export default function LoginPage() {
             <BrandLogo title="OpenGRC" compact />
 
             <h1 className="mt-8 text-[2.2rem] font-semibold tracking-[-0.06em] text-slate-950">Welcome back</h1>
-            <p className="mt-3 max-w-md text-sm leading-7 text-[#5e5650]">
-              Connect to the OpenGRC workspace to continue with your dashboards, workflows, and operational reviews.
-            </p>
+            <p className="mt-3 max-w-md text-sm leading-7 text-[#5e5650]">Connect to the OpenGRC workspace to continue with your dashboards, workflows, and operational reviews.</p>
 
             <div className="mt-8 border-b border-slate-200/70 pb-3 text-sm text-[#5e5650]">Account access</div>
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-6">
-              <Field
-                label="Identifier"
-                type="email"
-                placeholder="name@company.com"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-              />
+              <Field label="Email" type="email" placeholder="name@company.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
 
-              <Field
-                label="Password"
-                type="password"
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-              />
+              <Field label="Password" type="password" placeholder="Enter your password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
 
-              {error ? <div className="rounded-[24px] bg-[#fff1ef] px-4 py-3 text-sm text-[#a63d34]">{error}</div> : null}
+              {error ? <p className="text-[0.85rem] leading-1 text-[#a63d34] ml-4">{error}</p> : null}
 
               <div className="pt-3">
-              <button type="submit" disabled={loading} className="app-button app-button-dark login-submit w-full">
-                {loading ? "Connecting..." : "Connect"}
-              </button>
+                <button type="submit" disabled={loading} className="app-button app-button-dark login-submit w-full">
+                  {loading ? "Connecting..." : "Connect"}
+                </button>
               </div>
             </form>
           </div>
@@ -93,4 +93,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

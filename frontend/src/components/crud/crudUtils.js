@@ -14,6 +14,9 @@ const HIDDEN_FIELDS = new Set([
   "activity_name",
   "contact_person_name",
   "assigned_to_name",
+  "owner_stakeholder_name",
+  "sector_name",
+  "target_sector_name",
 ]);
 
 const TEXTAREA_FIELD_NAMES = new Set([
@@ -38,12 +41,24 @@ const TEXTAREA_FIELD_NAMES = new Set([
   "incident_response_procedure",
   "recovery_procedure",
   "review_notes",
+  "objective",
+  "outcome_summary",
+  "follow_up_actions",
+  "gap_summary",
+  "recommendation_summary",
+  "baseline_summary",
+  "priority_actions",
+  "blocker_summary",
+  "progress_note",
 ]);
 
 const BOOLEAN_FIELD_NAMES = new Set([
   "requires_nda",
   "critical_asset",
   "certificate_required",
+  "is_staff",
+  "is_active",
+  "is_verified",
 ]);
 
 const INTEGER_FIELD_NAMES = new Set([
@@ -52,6 +67,8 @@ const INTEGER_FIELD_NAMES = new Set([
   "duration_days",
   "participant_target",
   "planned_week",
+  "current_maturity",
+  "target_maturity",
 ]);
 
 const DECIMAL_FIELD_NAMES = new Set([
@@ -62,12 +79,16 @@ const DECIMAL_FIELD_NAMES = new Set([
 
 const EMAIL_FIELD_NAMES = new Set(["email"]);
 const URL_FIELD_NAMES = new Set(["document_reference", "source_url", "url"]);
+const PASSWORD_FIELD_NAMES = new Set(["password"]);
+const MULTI_RELATION_FIELD_NAMES = new Set(["role_ids", "permission_ids"]);
 
 export function toLabel(value) {
   return value.replaceAll("_", " ").replace(/(^|\s)\w/g, (character) => character.toUpperCase());
 }
 
 function inferFieldType(name) {
+  if (MULTI_RELATION_FIELD_NAMES.has(name)) return "multirelation";
+  if (PASSWORD_FIELD_NAMES.has(name)) return "password";
   if (BOOLEAN_FIELD_NAMES.has(name)) return "boolean";
   if (INTEGER_FIELD_NAMES.has(name)) return "integer";
   if (DECIMAL_FIELD_NAMES.has(name)) return "decimal";
@@ -88,6 +109,7 @@ function buildFallbackField(name, configuredField = {}) {
     choices: configuredField.choices || [],
     placeholder: configuredField.placeholder,
     default: configuredField.default,
+    relation: configuredField.relation,
   };
 }
 
@@ -114,17 +136,32 @@ export function buildFieldList(config, metadata) {
     .filter((field) => !field.read_only && !HIDDEN_FIELDS.has(field.name));
 }
 
+function normalizeMultiValue(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (item && typeof item === "object") return item.id ?? item.value ?? "";
+      return item;
+    })
+    .filter((item) => item !== "" && item !== null && item !== undefined);
+}
+
 export function buildInitialValues(fields, item = null) {
   return fields.reduce((accumulator, field) => {
     if (item) {
       const value = item[field.name];
       if (field.type === "boolean") {
         accumulator[field.name] = parseBooleanValue(value);
+      } else if (field.type === "multirelation") {
+        accumulator[field.name] = normalizeMultiValue(value);
       } else {
         accumulator[field.name] = value ?? "";
       }
     } else if (field.type === "boolean") {
       accumulator[field.name] = parseBooleanValue(field.default);
+    } else if (field.type === "multirelation") {
+      accumulator[field.name] = normalizeMultiValue(field.default);
     } else {
       accumulator[field.name] = field.default ?? "";
     }
@@ -172,6 +209,11 @@ export function serializePayload(fields, values) {
       return accumulator;
     }
 
+    if (field.type === "multirelation") {
+      accumulator[field.name] = normalizeMultiValue(rawValue).map((item) => resolveChoiceValue(field, item));
+      return accumulator;
+    }
+
     if (rawValue === "") {
       accumulator[field.name] = field.required ? "" : null;
       return accumulator;
@@ -202,7 +244,7 @@ export function normalizeFieldToken(value) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 }
@@ -239,7 +281,7 @@ function parseCsvLine(line) {
 }
 
 function parseCsvText(rawText) {
-  const cleaned = String(rawText ?? "").replace(/^\uFEFF/, "").trim();
+  const cleaned = String(rawText ?? "").replace(/^﻿/, "").trim();
   if (!cleaned) {
     return { headers: [], rows: [] };
   }
@@ -258,38 +300,16 @@ function parseCsvText(rawText) {
 export function buildImportDataset(rawText, fields) {
   const { headers, rows } = parseCsvText(rawText);
 
-  if (!headers.length) {
-    return {
-      headers: [],
-      matchedColumns: [],
-      unknownColumns: [],
-      records: [],
-    };
-  }
+  const normalizedHeaders = headers.map((header) => normalizeFieldToken(header));
+  const fieldMap = new Map(fields.map((field) => [normalizeFieldToken(field.label || field.name), field]));
 
-  const fieldLookup = fields.reduce((accumulator, field) => {
-    accumulator.set(normalizeFieldToken(field.name), field.name);
-    accumulator.set(normalizeFieldToken(field.label || toLabel(field.name)), field.name);
-    return accumulator;
-  }, new Map());
-
-  const matchedColumns = headers.map((header) => fieldLookup.get(normalizeFieldToken(header)) || null);
-  const unknownColumns = headers.filter((_, index) => !matchedColumns[index]);
-  const records = rows
-    .map((columns) =>
-      matchedColumns.reduce((accumulator, fieldName, index) => {
-        if (fieldName) {
-          accumulator[fieldName] = columns[index] ?? "";
-        }
-        return accumulator;
-      }, {}),
-    )
-    .filter((record) => Object.values(record).some((value) => String(value ?? "").trim() !== ""));
-
-  return {
-    headers,
-    matchedColumns,
-    unknownColumns,
-    records,
-  };
+  return rows.map((row) =>
+    normalizedHeaders.reduce((accumulator, token, index) => {
+      const field = fieldMap.get(token);
+      if (field) {
+        accumulator[field.name] = row[index] ?? "";
+      }
+      return accumulator;
+    }, {}),
+  );
 }
