@@ -15,7 +15,7 @@ done
 echo "Running migrations..."
 python manage.py migrate --noinput
 
-echo "Collecting static files..."
+echo "Collecting static files pour local..."
 python manage.py collectstatic --noinput
 
 echo "Seeding RBAC..."
