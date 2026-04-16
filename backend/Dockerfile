@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements /app/requirements
-RUN pip install --upgrade pip && pip install -r requirements/dev.txt
+ARG REQUIREMENTS=prod
+RUN pip install --upgrade pip && pip install -r requirements/${REQUIREMENTS}.txt
 
 COPY . /app
 RUN chmod +x /app/entrypoint.sh
