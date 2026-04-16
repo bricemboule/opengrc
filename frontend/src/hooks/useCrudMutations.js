@@ -6,6 +6,14 @@ function extractErrorMessage(error, fallback) {
   const data = error?.response?.data;
   if (typeof data?.detail === "string") return data.detail;
   if (typeof data?.message === "string") return data.message;
+  if (data && typeof data === "object") {
+    const firstFieldEntry = Object.entries(data).find(([, value]) => Array.isArray(value) || typeof value === "string");
+    if (firstFieldEntry) {
+      const [field, value] = firstFieldEntry;
+      const message = Array.isArray(value) ? value.join(" ") : value;
+      return field === "non_field_errors" ? message : `${field}: ${message}`;
+    }
+  }
   return fallback;
 }
 

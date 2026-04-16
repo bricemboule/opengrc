@@ -183,6 +183,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.projects.tasks.generate_daily_reporting_snapshot",
         "schedule": crontab(hour=6, minute=0),
     },
+    "consultation-meeting-reminders": {
+        "task": "apps.cybergrc.tasks.send_consultation_reminders",
+        "schedule": crontab(minute="*/15"),
+    },
 }
 
 CHANNEL_LAYERS = {

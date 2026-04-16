@@ -10,6 +10,7 @@ import Pagination from "../components/crud/Pagination";
 import EmptyState from "../components/crud/EmptyState";
 import Create from "../components/crud/Create";
 import ConfirmDialog from "../components/crud/ConfirmDialog";
+import ConsultationCalendarView from "../components/crud/ConsultationCalendarView";
 import Import from "../components/crud/Import";
 import MapView from "../components/crud/MapView";
 import OperationalReportView from "../components/crud/OperationalReportView";
@@ -41,7 +42,7 @@ const RELATION_OPTION_MAX_PAGES = 5;
 const SETTINGS_ONLY_FORM_MODULE_KEYS = new Set(["users", "roles", "sectors", "organizations", "organization_types", "asset_types", "assets"]);
 
 function getExtendedPageSize(activeMode, pageSize) {
-  const baseline = activeMode === "workflow" ? 80 : 60;
+  const baseline = ["workflow", "calendar"].includes(activeMode) ? 80 : 60;
   return Math.max(pageSize || 0, baseline);
 }
 
@@ -147,6 +148,21 @@ function getModuleFormEyebrow(moduleKey) {
   return "Cyber GRC";
 }
 
+function formatChoiceLabel(value) {
+  return String(value || "")
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/(^|\s)\w/g, (character) => character.toUpperCase());
+}
+
+function resolveChoiceDisplayValue(field, value) {
+  if (value === null || value === undefined || value === "") return value;
+  if (!field?.choices?.length) return value;
+
+  const matchedChoice = field.choices.find((choice) => String(choice?.value) === String(value));
+  return matchedChoice?.display_name || formatChoiceLabel(value);
+}
+
 function getQueryErrorMessage(error, fallback = "An error occurred while loading the data.") {
   const payload = error?.response?.data;
   if (typeof payload === "string" && payload.trim()) return payload;
@@ -212,6 +228,14 @@ function getModePresentation(config, activeMode) {
       pageTitle: getViewLabel(config, "map"),
       pageDescription: `Inspect the geographic footprint of ${config?.label?.toLowerCase()} with coordinates ready for mapping.`,
       searchPlaceholder: `Filter mapped ${config?.label?.toLowerCase()}...`,
+    };
+  }
+
+  if (activeMode === "calendar") {
+    return {
+      pageTitle: getViewLabel(config, "calendar"),
+      pageDescription: `Track upcoming meetings, calls, and follow-up actions for ${config?.label?.toLowerCase()}.`,
+      searchPlaceholder: `Filter ${config?.label?.toLowerCase()} calendar...`,
     };
   }
 
@@ -337,7 +361,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const workflowChoices = workflowFieldConfig?.choices || [];
   const reportPreset = moduleBehavior.reportPreset;
   const isOperationalReportMode = activeMode === "report" && Boolean(reportPreset);
-  const needsExtendedRows = activeMode === "map" || activeMode === "workflow" || isReportMode(activeMode);
+  const needsExtendedRows = activeMode === "map" || activeMode === "workflow" || activeMode === "calendar" || isReportMode(activeMode);
   const rows = data?.results || data || [];
   const totalRowCount = typeof data?.count === "number" ? data.count : rows.length;
   const shouldFetchExtendedRows = needsExtendedRows && totalRowCount > rows.length;
@@ -426,8 +450,10 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
           label: key.replaceAll("_", " ").replace(/(^|\s)\w/g, (character) => character.toUpperCase()),
           render: (row) => {
             const value = row[key];
+            const field = formFields.find((item) => item.name === key);
             if (typeof value === "boolean") return value ? "Yes" : "No";
-            return value ?? "-";
+            if (Array.isArray(value)) return value.length ? value.join(", ") : "-";
+            return resolveChoiceDisplayValue(field, value) ?? "-";
           },
         }));
   const shouldRenderTable = activeMode === "list" || activeMode === "search" || (isReportMode(activeMode) && !isOperationalReportMode);
@@ -749,6 +775,8 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
       {activeMode === "map" ? (
         <MapView title={`Map of ${config.label.toLowerCase()}`} description={`Operational map of ${config.label.toLowerCase()} with usable coordinates.`} rows={filteredExtendedRows} />
       ) : null}
+
+      {activeMode === "calendar" ? <ConsultationCalendarView rows={filteredExtendedRows} /> : null}
 
       <ConfirmDialog
         isOpen={Boolean(pendingDeleteItem)}

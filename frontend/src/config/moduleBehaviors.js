@@ -6,6 +6,7 @@ const DEFAULT_VIEW_LABELS = {
   search: "Search",
   workflow: "Workflow",
   report: "Report",
+  calendar: "Calendar",
 };
 
 const STAKEHOLDER_FORM_PRESENTATION = {
@@ -42,6 +43,48 @@ const STAKEHOLDER_FORM_PRESENTATION = {
       "Use the stakeholder's official name rather than an internal alias.",
       "Prioritize a named focal point and direct contact details.",
       "Write the engagement role with concrete verbs: coordinate, supervise, support, or escalate.",
+    ],
+  },
+};
+
+const CONSULTATION_FORM_PRESENTATION = {
+  variant: "editorial",
+  eyebrow: "Governance & Mapping",
+  sectionLabel: "Consultation meeting file",
+  createTitle: "Schedule a stakeholder consultation",
+  editTitle: "Update the stakeholder consultation",
+  createDescription: "Keep the meeting setup, access details, and follow-up actions in one operational file.",
+  editDescription: "Update the schedule, access details, attendance notes, and follow-up actions for this consultation.",
+  sections: [
+    {
+      title: "Meeting setup",
+      description: "Define who the session is for, what format it uses, and which workflow state it is in.",
+      fields: ["stakeholder", "related_infrastructure", "title", "consultation_type", "engagement_channel", "status"],
+    },
+    {
+      title: "Timing and access",
+      description: "Capture the schedule and the access path participants should use.",
+      fields: ["start_datetime", "end_datetime", "meeting_location", "meeting_link", "dial_in_details", "focal_person"],
+    },
+    {
+      title: "Agenda and attendance",
+      description: "Record the objective, agenda, and who is expected to participate.",
+      fields: ["objective", "agenda", "attendees"],
+    },
+    {
+      title: "Minutes and follow-up",
+      description: "Close the loop with notes, outcomes, and the next follow-up date.",
+      fields: ["minutes", "outcome_summary", "follow_up_actions", "next_follow_up_date", "notes"],
+    },
+  ],
+  sidePanel: {
+    title: "Run a usable meeting record",
+    description: "This file should let the team understand when the session happens, how to join it, what was decided, and what follow-up is due next.",
+    keyFields: ["title", "stakeholder", "engagement_channel", "start_datetime", "status"],
+    highlights: [
+      "Add a direct meeting link or dial-in path for remote sessions.",
+      "Keep the agenda short and action-oriented before the meeting starts.",
+      "Record minutes and follow-up actions before closing the consultation.",
     ],
   },
 };
@@ -140,22 +183,35 @@ const WORKFLOW_BLUEPRINTS = {
     },
   }),
   stakeholder_consultations: createWorkflowBlueprint({
-    objective: "Coordinate interviews, workshops, and validation sessions with clear follow-up and accountability.",
-    contextFields: ["consultation_type", "stakeholder_name", "focal_person"],
+    objective: "Run consultation meetings and calls with visible schedule, join details, minutes, and follow-up ownership.",
+    contextFields: ["consultation_type", "engagement_channel", "stakeholder_name"],
     ownerFields: ["focal_person", "stakeholder_name"],
-    dueFields: ["planned_date", "next_follow_up_date"],
+    dueFields: ["start_datetime", "next_follow_up_date"],
     blockerRules: [
       { when: (row) => !row.stakeholder && !row.focal_person, label: "No accountable stakeholder or focal person" },
-      { when: (row) => ["planned", "in_progress", "active"].includes(row.status) && !row.planned_date, label: "Consultation date not scheduled" },
-      { when: (row) => row.status === "completed" && !row.outcome_summary, label: "Outcome summary still missing" },
+      { when: (row) => ["scheduled", "confirmed", "rescheduled"].includes(row.status) && !row.start_datetime, label: "Meeting start time not set" },
+      { when: (row) => ["video", "hybrid"].includes(row.engagement_channel) && !row.meeting_link && !row.dial_in_details, label: "Remote access details are missing" },
+      { when: (row) => ["in_person", "hybrid"].includes(row.engagement_channel) && !row.meeting_location, label: "Meeting location is missing" },
+      { when: (row) => row.status === "confirmed" && !row.agenda, label: "Agenda not yet captured" },
+      { when: (row) => row.status === "completed" && !row.minutes && !row.outcome_summary, label: "Minutes or outcome summary still missing" },
     ],
+    stageNotes: {
+      draft: "The consultation exists but is not yet ready to be scheduled.",
+      scheduled: "The meeting has a slot and should now be prepared for delivery.",
+      confirmed: "Participants and access details are ready and the session can proceed.",
+      rescheduled: "The session moved and needs updated coordination details.",
+      completed: "The meeting closed and should now feed minutes and follow-up actions.",
+      missed: "The planned session did not happen and needs a recovery decision.",
+      archived: "The consultation record is retained for traceability only.",
+    },
     nextActionLabels: {
-      draft: "Clarify the consultation goal and the target stakeholders.",
-      planned: "Confirm the date, invitees, and facilitation owner.",
-      in_progress: "Capture decisions, commitments, and unresolved issues live.",
-      active: "Keep the engagement loop moving and document updates.",
-      in_review: "Validate the outputs before closing the session.",
-      completed: "Track follow-up actions and next contact date.",
+      draft: "Clarify the purpose, target stakeholder, and preferred meeting format.",
+      scheduled: "Confirm the agenda, join path, and expected attendees.",
+      confirmed: "Run the session, capture minutes, and log decisions live.",
+      rescheduled: "Publish the new slot and refresh the access details.",
+      completed: "Track the follow-up actions and the next coordination date.",
+      missed: "Decide whether to reschedule, cancel, or escalate the consultation.",
+      archived: "Retain the record as reference evidence for future reviews.",
     },
   }),
   risk_register_entries: createWorkflowBlueprint({
@@ -367,11 +423,12 @@ const MODULE_BEHAVIORS = {
     viewLabels: { workflow: "Desk study workflow", report: "Desk study report" },
   },
   stakeholder_consultations: {
-    extraViews: ["workflow", "report"],
+    extraViews: ["workflow", "report", "calendar"],
     workflowField: "status",
     workflowBlueprint: WORKFLOW_BLUEPRINTS.stakeholder_consultations,
     reportPreset: "consultation",
-    viewLabels: { workflow: "Consultation workflow", report: "Consultation report" },
+    viewLabels: { workflow: "Consultation workflow", report: "Consultation report", calendar: "Meeting calendar" },
+    formPresentation: CONSULTATION_FORM_PRESENTATION,
   },
   risk_register_entries: {
     extraViews: ["workflow", "report"],

@@ -1,8 +1,43 @@
 import { Check, Minus } from "lucide-react";
 import { isValidElement, useEffect, useMemo, useState } from "react";
 
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatStructuredDateValue(year, month, day) {
+  const monthLabel = MONTH_LABELS[month - 1];
+  if (!monthLabel) return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return `${monthLabel} ${day}, ${year}`;
+}
+
+function formatStructuredTimeValue(hour, minute) {
+  const safeMinute = Number.isFinite(minute) ? minute : 0;
+  const meridiem = hour >= 12 ? "PM" : "AM";
+  const normalizedHour = hour % 12 || 12;
+  return `${normalizedHour}:${String(safeMinute).padStart(2, "0")} ${meridiem}`;
+}
+
+function formatTemporalValue(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return value;
+
+  const dateTimeMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (dateTimeMatch) {
+    const [, year, month, day, hour, minute] = dateTimeMatch;
+    return `${formatStructuredDateValue(Number(year), Number(month), Number(day))}, ${formatStructuredTimeValue(Number(hour), Number(minute))}`;
+  }
+
+  const dateMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateMatch) {
+    const [, year, month, day] = dateMatch;
+    return formatStructuredDateValue(Number(year), Number(month), Number(day));
+  }
+
+  return value;
+}
+
 function renderCellContent(value) {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "\u2014";
+  if (typeof value === "string") return formatTemporalValue(value);
   return value;
 }
 
@@ -45,15 +80,20 @@ function getStatusTone(status) {
     case "completed":
     case "validated":
     case "approved":
+    case "confirmed":
       return { badge: "bg-[#f2f0ec] text-[#6f685f]", dot: "bg-[#a9a195]" };
     case "in_progress":
     case "planned":
     case "ongoing":
+    case "scheduled":
+    case "rescheduled":
       return { badge: "bg-[#f5efe9] text-[#8a6d59]", dot: "bg-[#d0a586]" };
     case "in_review":
     case "submitted":
     case "pending":
       return { badge: "bg-[#f3eef1] text-[#7f6975]", dot: "bg-[#bc9dad]" };
+    case "missed":
+      return { badge: "bg-[#f8ece9] text-[#8b5f56]", dot: "bg-[#d2a29a]" };
     case "archived":
     case "inactive":
     case "cancelled":

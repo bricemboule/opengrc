@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
-import { FiBarChart2, FiBell, FiFileText, FiFolderPlus, FiList, FiMap, FiSearch, FiUpload, FiX } from "react-icons/fi";
+import { FiActivity, FiBarChart2, FiBell, FiCalendar, FiCheckSquare, FiClipboard, FiFileText, FiFolderPlus, FiGrid, FiList, FiMap, FiSearch, FiUpload, FiX } from "react-icons/fi";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAuth } from "../features/auth/authSlice";
@@ -136,13 +136,18 @@ export default function AdminLayout() {
   }
 
   function renderActionIcon(label) {
-    if (label === "Create") return <FiFolderPlus size={14} />;
-    if (label.includes("Import")) return <FiUpload size={14} />;
-    if (label.includes("GIS") || label.includes("Map")) return <FiMap size={14} />;
-    if (label.includes("Search")) return <FiSearch size={14} />;
-    if (label.includes("Report")) return <FiBarChart2 size={14} />;
-    if (label.includes("Workflow") || label.includes("board")) return <FiList size={14} />;
-    if (label.includes("List")) return <FiList size={14} />;
+    const normalized = String(label || "").toLowerCase();
+    if (normalized === "create") return <FiFolderPlus size={14} />;
+    if (normalized.includes("import")) return <FiUpload size={14} />;
+    if (normalized.includes("calendar")) return <FiCalendar size={14} />;
+    if (normalized.includes("workflow") || normalized.includes("board")) return <FiActivity size={14} />;
+    if (normalized.includes("report")) return <FiBarChart2 size={14} />;
+    if (normalized.includes("gis") || normalized.includes("map")) return <FiMap size={14} />;
+    if (normalized.includes("search")) return <FiSearch size={14} />;
+    if (normalized.includes("checklist")) return <FiCheckSquare size={14} />;
+    if (normalized.includes("review")) return <FiClipboard size={14} />;
+    if (normalized.includes("overview")) return <FiGrid size={14} />;
+    if (normalized.includes("list")) return <FiList size={14} />;
     return <FiFileText size={14} />;
   }
 

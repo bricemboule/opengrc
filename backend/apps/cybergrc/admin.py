@@ -49,9 +49,9 @@ class DeskStudyReviewAdmin(admin.ModelAdmin):
 
 @admin.register(StakeholderConsultation)
 class StakeholderConsultationAdmin(admin.ModelAdmin):
-    list_display = ("title", "consultation_type", "planned_date", "status", "next_follow_up_date")
-    search_fields = ("title", "focal_person", "objective")
-    list_filter = ("consultation_type", "status")
+    list_display = ("title", "consultation_type", "engagement_channel", "start_datetime", "status", "next_follow_up_date")
+    search_fields = ("title", "focal_person", "objective", "agenda", "attendees", "meeting_location")
+    list_filter = ("consultation_type", "engagement_channel", "status")
 
 
 @admin.register(RiskRegisterEntry)

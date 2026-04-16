@@ -25,6 +25,23 @@ const PRIORITY_CHOICES = [
   { value: "critical", display_name: "Critical" },
 ];
 
+const ENGAGEMENT_CHANNEL_CHOICES = [
+  { value: "in_person", display_name: "In person" },
+  { value: "phone", display_name: "Phone" },
+  { value: "video", display_name: "Video" },
+  { value: "hybrid", display_name: "Hybrid" },
+];
+
+const CONSULTATION_STATUS_CHOICES = [
+  { value: "draft", display_name: "Draft" },
+  { value: "scheduled", display_name: "Scheduled" },
+  { value: "confirmed", display_name: "Confirmed" },
+  { value: "rescheduled", display_name: "Rescheduled" },
+  { value: "completed", display_name: "Completed" },
+  { value: "missed", display_name: "Missed" },
+  { value: "archived", display_name: "Archived" },
+];
+
 const cybergrcFieldDefinitions = {
   cybergrc_stakeholders: [
     { name: "name", required: true },
@@ -483,11 +500,18 @@ const cybergrcFieldDefinitions = {
         { value: "exercise", display_name: "Exercise coordination" },
       ],
     },
-    { name: "objective", type: "textarea" },
-    { name: "planned_date", type: "date" },
-    { name: "completed_date", type: "date" },
-    { name: "status", type: "choice", choices: WORKFLOW_STATUS_CHOICES },
+    { name: "engagement_channel", type: "choice", choices: ENGAGEMENT_CHANNEL_CHOICES },
+    { name: "status", type: "choice", choices: CONSULTATION_STATUS_CHOICES },
+    { name: "start_datetime", type: "datetime" },
+    { name: "end_datetime", type: "datetime" },
+    { name: "meeting_location" },
+    { name: "meeting_link", type: "url" },
+    { name: "dial_in_details", type: "textarea" },
     { name: "focal_person" },
+    { name: "objective", type: "textarea" },
+    { name: "agenda", type: "textarea" },
+    { name: "attendees", type: "textarea", helperText: "Add one attendee or contact per line." },
+    { name: "minutes", type: "textarea" },
     { name: "outcome_summary", type: "textarea" },
     { name: "follow_up_actions", type: "textarea" },
     { name: "next_follow_up_date", type: "date" },
@@ -2453,11 +2477,18 @@ export const moduleConfigs = [
       "related_infrastructure",
       "title",
       "consultation_type",
-      "objective",
-      "planned_date",
-      "completed_date",
+      "engagement_channel",
       "status",
+      "start_datetime",
+      "end_datetime",
+      "meeting_location",
+      "meeting_link",
+      "dial_in_details",
       "focal_person",
+      "objective",
+      "agenda",
+      "attendees",
+      "minutes",
       "outcome_summary",
       "follow_up_actions",
       "next_follow_up_date",
@@ -2467,7 +2498,8 @@ export const moduleConfigs = [
     "columns": [
       "title",
       "consultation_type",
-      "planned_date",
+      "engagement_channel",
+      "start_datetime",
       "status",
       "next_follow_up_date"
     ]

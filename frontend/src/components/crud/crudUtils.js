@@ -17,6 +17,8 @@ const HIDDEN_FIELDS = new Set([
   "owner_stakeholder_name",
   "sector_name",
   "target_sector_name",
+  "start_reminder_sent_for",
+  "follow_up_reminder_sent_for",
 ]);
 
 const TEXTAREA_FIELD_NAMES = new Set([
@@ -42,6 +44,10 @@ const TEXTAREA_FIELD_NAMES = new Set([
   "recovery_procedure",
   "review_notes",
   "objective",
+  "agenda",
+  "attendees",
+  "dial_in_details",
+  "minutes",
   "outcome_summary",
   "follow_up_actions",
   "gap_summary",
@@ -95,6 +101,7 @@ function inferFieldType(name) {
   if (EMAIL_FIELD_NAMES.has(name)) return "email";
   if (URL_FIELD_NAMES.has(name)) return "url";
   if (TEXTAREA_FIELD_NAMES.has(name)) return "textarea";
+  if (name.endsWith("_datetime")) return "datetime";
   if (name.endsWith("_date") || name.endsWith("_at")) return "date";
   return "string";
 }
@@ -200,6 +207,15 @@ export function parseBooleanValue(value) {
   return Boolean(value);
 }
 
+function shouldSerializeEmptyAsNull(field) {
+  return ["relation", "multirelation", "date", "datetime", "integer", "decimal", "float", "number"].includes(field.type);
+}
+
+function normalizeDateTimeValue(value) {
+  if (typeof value !== "string") return value;
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+}
+
 export function serializePayload(fields, values) {
   return fields.reduce((accumulator, field) => {
     const rawValue = values[field.name];
@@ -215,7 +231,7 @@ export function serializePayload(fields, values) {
     }
 
     if (rawValue === "") {
-      accumulator[field.name] = field.required ? "" : null;
+      accumulator[field.name] = field.required ? "" : shouldSerializeEmptyAsNull(field) ? null : "";
       return accumulator;
     }
 
@@ -231,6 +247,11 @@ export function serializePayload(fields, values) {
 
     if (["decimal", "float", "number"].includes(field.type)) {
       accumulator[field.name] = Number.parseFloat(rawValue);
+      return accumulator;
+    }
+
+    if (field.type === "datetime") {
+      accumulator[field.name] = normalizeDateTimeValue(rawValue);
       return accumulator;
     }
 

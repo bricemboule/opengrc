@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from .models import (
     ActionPlanTask,
@@ -22,8 +23,23 @@ STATUS_MESSAGES = {
     "in_review": "entered review",
     "submitted": "submitted",
     "validated": "validated",
+    "scheduled": "scheduled",
+    "confirmed": "confirmed",
     "completed": "completed",
+    "missed": "marked as missed",
+    "rescheduled": "rescheduled",
 }
+
+
+def format_schedule_value(value):
+    if not value:
+        return ""
+    if hasattr(value, "hour"):
+        try:
+            return timezone.localtime(value).strftime("%d %b %Y %H:%M")
+        except Exception:
+            return str(value)
+    return str(value)
 
 
 def snapshot_previous_state(sender, instance, tracked_fields):
@@ -110,7 +126,7 @@ def snapshot_desk_study_state(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=StakeholderConsultation)
 def snapshot_consultation_state(sender, instance, **kwargs):
-    snapshot_previous_state(sender, instance, ["status", "planned_date", "next_follow_up_date"])
+    snapshot_previous_state(sender, instance, ["status", "start_datetime", "next_follow_up_date", "meeting_link"])
 
 
 @receiver(pre_save, sender=CapacityAssessment)
@@ -203,15 +219,22 @@ def notify_desk_study_activity(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=StakeholderConsultation)
 def notify_consultation_activity(sender, instance, created, **kwargs):
-    if instance.planned_date and instance.status in {"planned", "in_progress", "active"} and (
-        field_changed(instance, "planned_date", created) or field_changed(instance, "status", created)
+    if instance.start_datetime and instance.status in {"scheduled", "confirmed", "rescheduled"} and (
+        field_changed(instance, "start_datetime", created) or field_changed(instance, "status", created) or field_changed(instance, "meeting_link", created)
     ):
-        broadcast_notification(f"Consultation scheduled: {instance.title} on {instance.planned_date}", organization=getattr(instance, "organization", None))
+        channel = instance.get_engagement_channel_display().lower()
+        broadcast_notification(
+            f"Consultation meeting scheduled: {instance.title} on {format_schedule_value(instance.start_datetime)} via {channel}",
+            organization=getattr(instance, "organization", None),
+        )
 
     if instance.next_follow_up_date and (
         field_changed(instance, "next_follow_up_date", created) or field_changed(instance, "status", created)
-    ) and instance.status not in {"completed", "archived"}:
-        broadcast_notification(f"Consultation follow-up due: {instance.title} on {instance.next_follow_up_date}", organization=getattr(instance, "organization", None))
+    ) and instance.status not in {"completed", "missed", "archived"}:
+        broadcast_notification(
+            f"Consultation follow-up due: {instance.title} on {instance.next_follow_up_date}",
+            organization=getattr(instance, "organization", None),
+        )
 
     notify_workflow_transition(instance, created, "Consultation")
 

@@ -20,6 +20,7 @@ const CALENDAR_MONTH_NAMES = [
 const SELECT_MENU_MAX_HEIGHT_CLASS = "max-h-[24.5rem] overflow-y-auto pr-1";
 const SELECT_MENU_ITEMS_MAX_HEIGHT_CLASS = "max-h-[20.75rem] overflow-y-auto pr-1";
 const SELECT_SEARCH_THRESHOLD = 10;
+const TIME_INTERVAL_MINUTES = 15;
 
 function DateTriggerIcon({ className = "" }) {
   return (
@@ -39,6 +40,15 @@ function DateTriggerIcon({ className = "" }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function TimeTriggerIcon({ className = "" }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden="true">
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 4.8V8.2L10.35 9.55" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -137,6 +147,42 @@ function formatDisplayDate(date) {
   return `${day}/${month}/${date.getFullYear()}`;
 }
 
+function parseStoredTime(value) {
+  const normalizedValue = String(value ?? "").trim();
+  if (!normalizedValue) return "09:00";
+
+  const timeMatch = normalizedValue.match(/T(\d{2}):(\d{2})/);
+  if (timeMatch) {
+    return `${timeMatch[1]}:${timeMatch[2]}`;
+  }
+
+  return "09:00";
+}
+
+function formatStoredDateTime(date, timeValue = "09:00") {
+  return `${formatStoredDate(date)}T${timeValue}`;
+}
+
+function formatDisplayDateTime(date, timeValue = "09:00") {
+  return `${formatDisplayDate(date)} ${timeValue}`;
+}
+
+function buildTimeOptions(selectedTimeValue = "09:00") {
+  const generatedOptions = [];
+
+  for (let hour = 0; hour < 24; hour += 1) {
+    for (let minute = 0; minute < 60; minute += TIME_INTERVAL_MINUTES) {
+      generatedOptions.push(`${`${hour}`.padStart(2, "0")}:${`${minute}`.padStart(2, "0")}`);
+    }
+  }
+
+  return Array.from(new Set([selectedTimeValue, ...generatedOptions])).sort((left, right) => {
+    const [leftHour, leftMinute] = left.split(":").map(Number);
+    const [rightHour, rightMinute] = right.split(":").map(Number);
+    return leftHour * 60 + leftMinute - (rightHour * 60 + rightMinute);
+  });
+}
+
 function isSameDate(left, right) {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -187,6 +233,7 @@ function toggleArrayValue(values, nextValue) {
 export default function CrudField({ field, value, error, onChange, appearance = "default" }) {
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [optionSearch, setOptionSearch] = useState("");
   const interactiveRef = useRef(null);
   const choiceList = useMemo(() => toChoiceList(field.choices), [field.choices]);
@@ -200,8 +247,12 @@ export default function CrudField({ field, value, error, onChange, appearance = 
   const isEditorial = appearance === "editorial";
   const inputType = getInputType(field);
   const Component = isWide && field.type !== "password" && field.type !== "multirelation" ? "textarea" : "input";
+  const isEditorialTemporal = isEditorial && (field.type === "date" || field.type === "datetime");
   const isEditorialDate = isEditorial && field.type === "date";
+  const isEditorialDateTime = isEditorial && field.type === "datetime";
   const selectedDate = useMemo(() => parseDateValue(value), [value]);
+  const selectedTimeValue = useMemo(() => parseStoredTime(value), [value]);
+  const timeOptions = useMemo(() => buildTimeOptions(selectedTimeValue), [selectedTimeValue]);
   const selectedMultiLabels = useMemo(() => resolveChoiceLabels(choiceList, value), [choiceList, value]);
   const shouldEnableChoiceSearch = choiceList.length > SELECT_SEARCH_THRESHOLD;
   const filteredChoiceList = useMemo(
@@ -218,12 +269,13 @@ export default function CrudField({ field, value, error, onChange, appearance = 
   );
 
   useEffect(() => {
-    if (!isSelectOpen && !isDatePickerOpen) return undefined;
+    if (!isSelectOpen && !isDatePickerOpen && !isTimePickerOpen) return undefined;
 
     const handlePointerDown = (event) => {
       if (!interactiveRef.current?.contains(event.target)) {
         setIsSelectOpen(false);
         setIsDatePickerOpen(false);
+        setIsTimePickerOpen(false);
       }
     };
 
@@ -231,6 +283,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
       if (event.key === "Escape") {
         setIsSelectOpen(false);
         setIsDatePickerOpen(false);
+        setIsTimePickerOpen(false);
       }
     };
 
@@ -243,7 +296,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
       document.removeEventListener("touchstart", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isDatePickerOpen, isSelectOpen]);
+  }, [isDatePickerOpen, isSelectOpen, isTimePickerOpen]);
 
   useEffect(() => {
     if (!isSelectOpen) {
@@ -254,6 +307,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
   function openDatePicker() {
     const baseDate = selectedDate || new Date();
     setIsSelectOpen(false);
+    setIsTimePickerOpen(false);
     setDisplayedCalendarMonth(new Date(baseDate.getFullYear(), baseDate.getMonth(), 1));
     setIsDatePickerOpen(true);
   }
@@ -261,6 +315,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
   function toggleDatePicker() {
     if (isDatePickerOpen) {
       setIsDatePickerOpen(false);
+      setIsTimePickerOpen(false);
       return;
     }
 
@@ -272,8 +327,14 @@ export default function CrudField({ field, value, error, onChange, appearance = 
   }
 
   function selectDateFromPicker(date) {
-    onChange(field.name, formatStoredDate(date));
+    onChange(field.name, isEditorialDateTime ? formatStoredDateTime(date, selectedTimeValue) : formatStoredDate(date));
     setIsDatePickerOpen(false);
+    setIsTimePickerOpen(false);
+  }
+
+  function handleDateTimeChange(nextTimeValue) {
+    const baseDate = selectedDate || new Date();
+    onChange(field.name, formatStoredDateTime(baseDate, nextTimeValue));
   }
 
   if (field.type === "boolean") {
@@ -291,7 +352,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
               {label}
               {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
             </label>
-            {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+            {helperText ? <p className="ml-3 text-sm leading-6 text-black/54">{helperText}</p> : null}
           </div>
 
           <button
@@ -350,7 +411,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             {label}
             {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
           </label>
-          {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+          {helperText ? <p className="ml-3 text-sm leading-6 text-black/54">{helperText}</p> : null}
         </div>
 
         <div ref={interactiveRef} className="relative">
@@ -468,7 +529,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             {label}
             {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
           </label>
-          {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+          {helperText ? <p className="ml-3 text-sm leading-6 text-black/54">{helperText}</p> : null}
         </div>
 
         <div ref={interactiveRef} className="relative">
@@ -589,7 +650,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
     );
   }
 
-  if (isEditorialDate) {
+  if (isEditorialTemporal) {
     const fieldShellClassName = error ? "shadow-[inset_0_0_0_1px_rgba(166,61,52,0.24)]" : "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.04)]";
     const fieldFocusClassName = error
       ? "focus:shadow-[inset_0_0_0_1px_rgba(166,61,52,0.28),0_0_0_2px_rgba(166,61,52,0.05)]"
@@ -599,7 +660,11 @@ export default function CrudField({ field, value, error, onChange, appearance = 
         ? "shadow-[inset_0_0_0_1px_rgba(166,61,52,0.28),0_0_0_2px_rgba(166,61,52,0.05)]"
         : "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.12),0_0_0_2px_rgba(17,17,17,0.045)]"
       : "";
-    const displayedDateValue = selectedDate ? formatDisplayDate(selectedDate) : (value ? String(value) : "");
+    const displayedDateValue = selectedDate
+      ? isEditorialDateTime
+        ? formatDisplayDateTime(selectedDate, selectedTimeValue)
+        : formatDisplayDate(selectedDate)
+      : (value ? String(value) : "");
     const displayedMonthLabel = `${CALENDAR_MONTH_NAMES[displayedCalendarMonth.getMonth()]} ${displayedCalendarMonth.getFullYear()}`;
 
     return (
@@ -609,7 +674,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             {label}
             {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
           </label>
-          {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+          {helperText ? <p className="ml-3 text-sm leading-6 text-black/54">{helperText}</p> : null}
         </div>
 
         <div ref={interactiveRef} className="relative">
@@ -617,7 +682,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             type="text"
             readOnly
             value={displayedDateValue}
-            placeholder="DD/MM/YYYY"
+            placeholder={isEditorialDateTime ? "DD/MM/YYYY HH:MM" : "DD/MM/YYYY"}
             onClick={openDatePicker}
             onFocus={openDatePicker}
             className={`w-full bg-white px-6 py-2 pr-14 text-[14px] text-black placeholder:text-black/28 outline-none transition min-h-[48px] rounded-[99px] ${fieldShellClassName} ${fieldFocusClassName} ${fieldActiveClassName}`}
@@ -633,7 +698,11 @@ export default function CrudField({ field, value, error, onChange, appearance = 
           </button>
 
           {isDatePickerOpen ? (
-            <div role="dialog" aria-label={`Calendar ${label}`} className="absolute bottom-[calc(100%+0.55rem)] right-0 z-30 w-[16.5rem] rounded-[1rem] border border-black/[0.08] bg-white p-[0.9rem] shadow-[0_20px_45px_rgba(17,17,17,0.12)]">
+            <div
+              role="dialog"
+              aria-label={`Calendar ${label}`}
+              className={`absolute bottom-[calc(100%+0.55rem)] right-0 z-30 rounded-[1rem] border border-black/[0.08] bg-white p-[0.9rem] shadow-[0_20px_45px_rgba(17,17,17,0.12)] ${isEditorialDateTime ? "w-[18rem]" : "w-[16.5rem]"}`}
+            >
               <div className="mb-3 flex items-center justify-between gap-2.5">
                 <button
                   type="button"
@@ -684,6 +753,61 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                   </div>
                 ))}
               </div>
+
+              {isEditorialDateTime ? (
+                <div className="mt-3 border-t border-black/[0.06] pt-3">
+                  <label className="mb-2 ml-1 block text-[0.72rem] font-medium text-black/46">Time</label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-black/40" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" className="h-[14px] w-[14px]">
+                        <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+                        <path d="M8 4.8V8.2L10.35 9.55" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsTimePickerOpen((open) => !open)}
+                      aria-haspopup="listbox"
+                      aria-expanded={isTimePickerOpen}
+                      className="flex h-11 w-full items-center justify-between rounded-[99px] bg-[#f7f5f1] pl-11 pr-3 text-[0.84rem] font-medium text-black outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f7f5f1] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                    >
+                      <span>{selectedTimeValue}</span>
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full text-black/44 transition hover:bg-black/[0.05] hover:text-black/68">
+                        <TimeTriggerIcon className="h-[14px] w-[14px]" />
+                      </span>
+                    </button>
+
+                    {isTimePickerOpen ? (
+                      <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-40 rounded-[20px] bg-[#ffffff] p-2 shadow-[0_18px_34px_rgba(17,17,17,0.06)]">
+                        <div className="max-h-[11.5rem] overflow-y-auto pr-1">
+                          {timeOptions.map((timeOption) => {
+                            const isSelected = timeOption === selectedTimeValue;
+
+                            return (
+                              <button
+                                key={`${field.name}-time-${timeOption}`}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                onClick={() => {
+                                  handleDateTimeChange(timeOption);
+                                  setIsTimePickerOpen(false);
+                                }}
+                                className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
+                                  isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                                }`}
+                              >
+                                <span>{timeOption}</span>
+                                {isSelected ? <FiCheck size={14} aria-hidden="true" /> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -706,7 +830,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             {label}
             {field.required ? <span className="ml-1 text-[#a63d34]">*</span> : null}
           </label>
-          {helperText ? <p className="text-sm leading-6 text-black/54">{helperText}</p> : null}
+          {helperText ? <p className="ml-3 text-sm leading-6 text-black/54">{helperText}</p> : null}
         </div>
 
         <Component

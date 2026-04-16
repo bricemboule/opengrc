@@ -358,7 +358,7 @@ export default function DashboardPage() {
           title="Consultation queue"
           subtitle="Upcoming sessions and follow-ups that should stay visible to the coordination team."
           items={dashboard.consultation_queue || []}
-          renderMeta={(item) => [item.consultation_type, item.status, item.next_follow_up_date ? `Follow-up ${formatDate(item.next_follow_up_date)}` : item.planned_date ? formatDate(item.planned_date) : "No date"].filter(Boolean).join(" | ")}
+          renderMeta={(item) => [item.consultation_type, item.engagement_channel, item.status, item.next_follow_up_date ? `Follow-up ${formatDate(item.next_follow_up_date)}` : item.start_datetime ? formatDateTime(item.start_datetime) : item.planned_date ? formatDate(item.planned_date) : "No date"].filter(Boolean).join(" | ")}
           emptyTitle="No consultations"
           emptyDescription="Stakeholder consultation activity will appear here once sessions are scheduled."
         />

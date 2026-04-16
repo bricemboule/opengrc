@@ -102,6 +102,23 @@ class ConsultationType(models.TextChoices):
     EXERCISE = "exercise", "Exercise coordination"
 
 
+class EngagementChannel(models.TextChoices):
+    IN_PERSON = "in_person", "In person"
+    PHONE = "phone", "Phone"
+    VIDEO = "video", "Video"
+    HYBRID = "hybrid", "Hybrid"
+
+
+class ConsultationStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    SCHEDULED = "scheduled", "Scheduled"
+    CONFIRMED = "confirmed", "Confirmed"
+    COMPLETED = "completed", "Completed"
+    MISSED = "missed", "Missed"
+    RESCHEDULED = "rescheduled", "Rescheduled"
+    ARCHIVED = "archived", "Archived"
+
+
 class RiskTreatmentStatus(models.TextChoices):
     IDENTIFIED = "identified", "Identified"
     ASSESSING = "assessing", "Assessing"
@@ -347,14 +364,25 @@ class StakeholderConsultation(SoftDeleteAuditModel):
     )
     title = models.CharField(max_length=255)
     consultation_type = models.CharField(max_length=30, choices=ConsultationType.choices, default=ConsultationType.WORKSHOP)
+    engagement_channel = models.CharField(max_length=20, choices=EngagementChannel.choices, default=EngagementChannel.IN_PERSON)
+    meeting_link = models.URLField(blank=True)
+    dial_in_details = models.TextField(blank=True)
+    meeting_location = models.CharField(max_length=255, blank=True)
+    start_datetime = models.DateTimeField(null=True, blank=True)
+    end_datetime = models.DateTimeField(null=True, blank=True)
     objective = models.TextField(blank=True)
+    agenda = models.TextField(blank=True)
+    attendees = models.TextField(blank=True)
     planned_date = models.DateField(null=True, blank=True)
     completed_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=50, choices=WorkflowStatus.choices, default=WorkflowStatus.PLANNED)
+    status = models.CharField(max_length=50, choices=ConsultationStatus.choices, default=ConsultationStatus.DRAFT)
     focal_person = models.CharField(max_length=255, blank=True)
     outcome_summary = models.TextField(blank=True)
+    minutes = models.TextField(blank=True)
     follow_up_actions = models.TextField(blank=True)
     next_follow_up_date = models.DateField(null=True, blank=True)
+    start_reminder_sent_for = models.DateTimeField(null=True, blank=True)
+    follow_up_reminder_sent_for = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -362,6 +390,13 @@ class StakeholderConsultation(SoftDeleteAuditModel):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.start_datetime:
+            self.planned_date = self.start_datetime.date()
+        if self.end_datetime and not self.completed_date:
+            self.completed_date = self.end_datetime.date()
+        super().save(*args, **kwargs)
 
 
 class RiskRegisterEntry(SoftDeleteAuditModel):

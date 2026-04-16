@@ -1,5 +1,9 @@
-from django.db.models import Count
+from datetime import timedelta
+
+from django.db.models import Count, DateTimeField, Q
+from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -72,11 +76,23 @@ def build_choice_summary(queryset, field_name, choices):
     ]
 
 
+def normalize_due_sort_value(value):
+    if value is None:
+        return ""
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return str(value)
+
+
 def sort_attention(items):
     return sorted(
         items,
-        key=lambda item: (item["due_date"] is None, item["due_date"], item["title"]),
+        key=lambda item: (item["due_date"] is None, normalize_due_sort_value(item["due_date"]), item["title"]),
     )
+
+
+def annotate_consultation_schedule(queryset):
+    return queryset.annotate(schedule_anchor=Coalesce("start_datetime", Cast("planned_date", output_field=DateTimeField())))
 
 
 class CyberGrcOverviewView(APIView):
@@ -88,7 +104,7 @@ class CyberGrcOverviewView(APIView):
         infrastructure = scope_queryset_for_user(CriticalInfrastructure.objects.all(), request.user)
         artifacts = scope_queryset_for_user(GovernanceArtifact.objects.all(), request.user)
         desk_studies = scope_queryset_for_user(DeskStudyReview.objects.all(), request.user)
-        consultations = scope_queryset_for_user(StakeholderConsultation.objects.all(), request.user)
+        consultations = annotate_consultation_schedule(scope_queryset_for_user(StakeholderConsultation.objects.all(), request.user))
         risks = scope_queryset_for_user(RiskRegisterEntry.objects.all(), request.user)
         capacity_assessments = scope_queryset_for_user(CapacityAssessment.objects.all(), request.user)
         plans = scope_queryset_for_user(ContingencyPlan.objects.all(), request.user)
@@ -104,7 +120,7 @@ class CyberGrcOverviewView(APIView):
         upcoming_exercise_rows = exercises.filter(status__in=["planned", "in_progress"]).order_by("planned_date", "id")[:5]
         due_deliverable_rows = deliverables.exclude(status__in=["completed", "validated", "archived"]).order_by("due_date", "planned_week", "id")[:5]
         desk_study_rows = desk_studies.exclude(status__in=["completed", "archived"]).order_by("due_date", "priority", "id")[:5]
-        consultation_rows = consultations.exclude(status__in=["completed", "archived"]).order_by("planned_date", "next_follow_up_date", "id")[:5]
+        consultation_rows = consultations.exclude(status__in=["completed", "missed", "archived"]).filter(Q(start_datetime__isnull=False) | Q(planned_date__isnull=False) | Q(next_follow_up_date__isnull=False)).order_by("schedule_anchor", "next_follow_up_date", "id")[:5]
         capacity_rows = capacity_assessments.exclude(status__in=["completed", "archived"]).order_by("due_date", "gap_level", "id")[:5]
         action_plan_rows = action_tasks.exclude(status__in=["completed", "archived"]).order_by("due_date", "priority", "id")[:5]
         review_queue = (
@@ -126,7 +142,7 @@ class CyberGrcOverviewView(APIView):
         infrastructure_total = infrastructure.count()
         blocked_actions = action_tasks.exclude(status__in=["completed", "archived"]).exclude(blocker_summary="").count()
         open_desk_studies = desk_studies.exclude(status__in=["completed", "archived"]).count()
-        pending_consultations = consultations.exclude(status__in=["completed", "archived"]).count()
+        pending_consultations = consultations.exclude(status__in=["completed", "missed", "archived"]).count()
         capacity_due = capacity_assessments.exclude(status__in=["completed", "archived"]).filter(due_date__lte=today).count()
 
         workflow_summary = [
@@ -303,8 +319,8 @@ class CyberGrcOverviewView(APIView):
                         "title": item.title,
                         "route": "stakeholder-consultations",
                         "severity": item.get_status_display(),
-                        "due_date": item.next_follow_up_date or item.planned_date,
-                        "context": item.get_consultation_type_display(),
+                        "due_date": item.start_datetime or item.next_follow_up_date or item.planned_date,
+                        "context": " ? ".join(part for part in [item.get_consultation_type_display(), item.get_engagement_channel_display()] if part),
                     }
                     for item in consultation_rows
                 ],
@@ -426,7 +442,12 @@ class CyberGrcOverviewView(APIView):
                     "id": item.id,
                     "title": item.title,
                     "consultation_type": item.get_consultation_type_display(),
+                    "engagement_channel": item.get_engagement_channel_display(),
                     "planned_date": item.planned_date,
+                    "start_datetime": item.start_datetime,
+                    "end_datetime": item.end_datetime,
+                    "meeting_location": item.meeting_location,
+                    "meeting_link": item.meeting_link,
                     "next_follow_up_date": item.next_follow_up_date,
                     "status": item.get_status_display(),
                 }
@@ -506,8 +527,50 @@ class StakeholderConsultationViewSet(OrganizationScopedQuerySetMixin, SoftDelete
     queryset = StakeholderConsultation.objects.select_related("organization", "stakeholder", "related_infrastructure").all()
     serializer_class = StakeholderConsultationSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["title", "consultation_type", "objective", "focal_person", "outcome_summary", "follow_up_actions"]
-    ordering_fields = ["id", "title", "planned_date", "completed_date", "status", "next_follow_up_date", "created_at"]
+    search_fields = [
+        "title",
+        "consultation_type",
+        "engagement_channel",
+        "objective",
+        "agenda",
+        "attendees",
+        "focal_person",
+        "meeting_location",
+        "meeting_link",
+        "dial_in_details",
+        "outcome_summary",
+        "minutes",
+        "follow_up_actions",
+    ]
+    ordering_fields = [
+        "id",
+        "title",
+        "planned_date",
+        "start_datetime",
+        "end_datetime",
+        "completed_date",
+        "status",
+        "next_follow_up_date",
+        "created_at",
+    ]
+
+    @action(detail=False, methods=["get"], url_path="upcoming")
+    def upcoming(self, request):
+        horizon_days = max(1, min(int(request.query_params.get("days", 60)), 120))
+        now = timezone.now()
+        today = timezone.localdate()
+        follow_up_horizon = today + timedelta(days=horizon_days)
+        schedule_horizon = now + timedelta(days=horizon_days)
+
+        queryset = annotate_consultation_schedule(self.filter_queryset(self.get_queryset()))
+        queryset = queryset.exclude(status__in=["completed", "missed", "archived"]).filter(
+            Q(start_datetime__isnull=False, start_datetime__gte=now, start_datetime__lte=schedule_horizon)
+            | Q(start_datetime__isnull=True, planned_date__isnull=False, planned_date__gte=today, planned_date__lte=follow_up_horizon)
+            | Q(next_follow_up_date__isnull=False, next_follow_up_date__gte=today, next_follow_up_date__lte=follow_up_horizon)
+        ).order_by("schedule_anchor", "next_follow_up_date", "id")[:100]
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class RiskRegisterEntryViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):

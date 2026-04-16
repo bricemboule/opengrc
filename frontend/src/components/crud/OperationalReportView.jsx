@@ -22,6 +22,13 @@ function formatReadableValue(value) {
   const normalized = String(value).trim();
   if (!normalized) return "";
 
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(normalized)) {
+    const parsed = new Date(normalized);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+    }
+  }
+
   if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
     const parsed = new Date(normalized);
     if (!Number.isNaN(parsed.getTime())) {
@@ -73,13 +80,16 @@ function buildSummary(config, rows) {
       ];
     }
     case "consultation": {
-      const upcoming = rows.filter((row) => row.planned_date && (daysUntil(row.planned_date) ?? 999) >= 0 && (daysUntil(row.planned_date) ?? 999) <= 30).length;
-      const followUps = rows.filter((row) => row.next_follow_up_date && (daysUntil(row.next_follow_up_date) ?? 999) <= 14).length;
+      const upcoming = rows.filter((row) => {
+        const scheduleDate = row.start_datetime || row.planned_date;
+        return scheduleDate && (daysUntil(scheduleDate) ?? 999) >= 0 && (daysUntil(scheduleDate) ?? 999) <= 30;
+      }).length;
+      const followUps = rows.filter((row) => row.next_follow_up_date && (daysUntil(row.next_follow_up_date) ?? 999) >= 0 && (daysUntil(row.next_follow_up_date) ?? 999) <= 14).length;
       const completed = countStatuses(rows, ["completed"]);
       return [
-        { label: "Upcoming", value: upcoming, helper: "Consultations planned in the next 30 days" },
+        { label: "Upcoming", value: upcoming, helper: "Meetings or calls planned in the next 30 days" },
         { label: "Follow-up due", value: followUps, helper: "Sessions needing a next action now" },
-        { label: "Completed", value: completed, helper: "Sessions with a closed delivery loop" },
+        { label: "Completed", value: completed, helper: "Consultations with minutes or outcome ready" },
       ];
     }
     case "capacity": {
@@ -177,12 +187,12 @@ function buildHighlights(config, rows) {
         }));
     case "consultation":
       return rows
-        .filter((row) => row.planned_date || row.next_follow_up_date)
-        .sort((left, right) => String(left.next_follow_up_date || left.planned_date || "9999-12-31").localeCompare(String(right.next_follow_up_date || right.planned_date || "9999-12-31")))
+        .filter((row) => row.start_datetime || row.planned_date || row.next_follow_up_date)
+        .sort((left, right) => String(left.start_datetime || left.next_follow_up_date || left.planned_date || "9999-12-31").localeCompare(String(right.start_datetime || right.next_follow_up_date || right.planned_date || "9999-12-31")))
         .slice(0, 5)
         .map((row) => ({
           title: row.title,
-          meta: joinMeta([row.consultation_type, row.status, row.next_follow_up_date || row.planned_date]),
+          meta: joinMeta([row.consultation_type, row.engagement_channel, row.status, row.start_datetime || row.next_follow_up_date || row.planned_date]),
         }));
     case "capacity":
       return rows
@@ -251,7 +261,7 @@ function sortRows(config, rows) {
     case "desk-study":
       return [...rows].sort((left, right) => String(left.due_date || "9999-12-31").localeCompare(String(right.due_date || "9999-12-31")));
     case "consultation":
-      return [...rows].sort((left, right) => String(left.next_follow_up_date || left.planned_date || "9999-12-31").localeCompare(String(right.next_follow_up_date || right.planned_date || "9999-12-31")));
+      return [...rows].sort((left, right) => String(left.start_datetime || left.next_follow_up_date || left.planned_date || "9999-12-31").localeCompare(String(right.start_datetime || right.next_follow_up_date || right.planned_date || "9999-12-31")));
     case "capacity":
       return [...rows].sort((left, right) => String(left.due_date || "9999-12-31").localeCompare(String(right.due_date || "9999-12-31")));
     case "delivery":

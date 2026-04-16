@@ -133,6 +133,28 @@ class StakeholderConsultationSerializer(AuditFieldsSerializerMixin):
 
     def validate(self, attrs):
         validate_same_organization(attrs, self.instance, ["stakeholder", "related_infrastructure"])
+
+        start_datetime = attrs.get("start_datetime", getattr(self.instance, "start_datetime", None))
+        end_datetime = attrs.get("end_datetime", getattr(self.instance, "end_datetime", None))
+        engagement_channel = attrs.get("engagement_channel", getattr(self.instance, "engagement_channel", ""))
+        meeting_link = attrs.get("meeting_link", getattr(self.instance, "meeting_link", ""))
+        dial_in_details = attrs.get("dial_in_details", getattr(self.instance, "dial_in_details", ""))
+        status = attrs.get("status", getattr(self.instance, "status", ""))
+
+        errors = {}
+
+        if start_datetime and end_datetime and end_datetime <= start_datetime:
+            errors["end_datetime"] = "The end time must be after the start time."
+
+        if engagement_channel in {"video", "hybrid"} and not (meeting_link or dial_in_details):
+            errors["meeting_link"] = "Add a meeting link or dial-in details for remote participation."
+
+        if status in {"scheduled", "confirmed", "rescheduled"} and not start_datetime:
+            errors["start_datetime"] = "Add a start time before moving this consultation into the meeting workflow."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
         return attrs
 
 

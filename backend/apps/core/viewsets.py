@@ -18,9 +18,9 @@ class SoftDeleteAuditModelViewSet(AuditModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user if self.request.user.is_authenticated else None
         extra_data = {"created_by": user, "updated_by": user}
-        if user and not user.is_superuser and getattr(user, "organization_id", None):
+        if user and getattr(user, "organization_id", None):
             fields = getattr(serializer.Meta, "fields", [])
-            if fields == "__all__" or self.organization_field in fields:
+            if (fields == "__all__" or self.organization_field in fields) and self.organization_field not in serializer.validated_data:
                 extra_data[self.organization_field] = user.organization
         instance = serializer.save(**extra_data)
         self.log_action("create", instance)
