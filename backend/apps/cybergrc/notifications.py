@@ -14,7 +14,7 @@ def _dispatch_notification_safely(**kwargs):
         logger.exception("Unable to dispatch Cyber GRC notification")
 
 
-def broadcast_notification(message, organization=None, title="Cyber GRC alert", source="cybergrc", send_email=True):
+def broadcast_notification(message, organization=None, title="Cyber GRC alert", source="cybergrc", send_email=False):
     transaction.on_commit(
         lambda: _dispatch_notification_safely(
             message=message,

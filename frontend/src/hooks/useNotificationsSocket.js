@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 
-import api from "../api/client";
 import { notificationReceived, notificationsLoaded } from "../features/notifications/notificationsSlice";
 import { notifySuccess } from "../utils/toast";
+import { fetchLatestNotifications } from "../utils/notifications";
 
 function buildNotificationsSocketUrl() {
   const token = localStorage.getItem("access_token");
@@ -49,17 +49,7 @@ export default function useNotificationsSocket() {
     }
 
     let isMounted = true;
-    api
-      .get("/communications/notifications/", { params: { page_size: 12 } })
-      .then((response) => {
-        if (!isMounted) return;
-        const rows = response.data?.results || response.data || [];
-        dispatch(notificationsLoaded(rows));
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        dispatch(notificationsLoaded([]));
-      });
+    fetchLatestNotifications(dispatch);
 
     const socketUrl = buildNotificationsSocketUrl();
     if (!socketUrl) {
@@ -77,8 +67,14 @@ export default function useNotificationsSocket() {
       notifySuccess(payload.message);
     };
 
+    const intervalId = window.setInterval(() => {
+      if (!isMounted) return;
+      fetchLatestNotifications(dispatch);
+    }, 30000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(intervalId);
       socket.close();
     };
   }, [dispatch]);
