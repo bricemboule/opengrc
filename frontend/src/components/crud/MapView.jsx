@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Crosshair, Layers3, MapPin } from "lucide-react";
+import { Crosshair, Download, Layers3, MapPin } from "lucide-react";
+import api from "../../api/client";
 
 const DEFAULT_CENTER = [13.454876, -16.579032];
 const TILE_LAYER_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
@@ -22,24 +24,53 @@ function formatStatusLabel(value) {
 
 function getPointColor(status) {
   const value = String(status || "").toLowerCase();
-  if (["reviewed", "mapped", "available", "completed", "validated", "closed", "ready"].some((token) => value.includes(token))) return "#8ecf9b";
-  if (["critical", "high", "blocked", "overdue", "unavailable", "constrained"].some((token) => value.includes(token))) return "#d67863";
-  if (["planned", "pending", "draft", "in_progress", "submitted"].some((token) => value.includes(token))) return "#f0be7c";
+  if (["reviewed", "mapped", "available", "completed", "validated", "closed", "ready", "confirmed", "deployed", "monitored", "mitigated", "shared", "received", "actioned"].some((token) => value.includes(token))) return "#8ecf9b";
+  if (["critical", "high", "blocked", "overdue", "unavailable", "constrained", "missed", "maintenance", "expired", "revoked", "declined"].some((token) => value.includes(token))) return "#d67863";
+  if (["planned", "pending", "draft", "in_progress", "submitted", "requested", "approved", "mobilizing", "demobilizing", "staged", "returning", "identified", "analyzing", "validating", "prepared", "monitoring", "new"].some((token) => value.includes(token))) return "#f0be7c";
   return "#8d95d8";
 }
 
 function getStatusTone(status) {
   const value = String(status || "").toLowerCase();
-  if (["reviewed", "mapped", "available", "completed", "validated", "closed", "ready"].some((token) => value.includes(token))) {
+  if (["reviewed", "mapped", "available", "completed", "validated", "closed", "ready", "confirmed", "deployed", "monitored", "mitigated", "shared", "received", "actioned"].some((token) => value.includes(token))) {
     return "bg-[#edf7ee] text-[#4f6854]";
   }
-  if (["critical", "high", "blocked", "overdue", "unavailable", "constrained"].some((token) => value.includes(token))) {
+  if (["critical", "high", "blocked", "overdue", "unavailable", "constrained", "missed", "maintenance", "expired", "revoked", "declined"].some((token) => value.includes(token))) {
     return "bg-[#fff0ea] text-[#8b5a4d]";
   }
-  if (["planned", "pending", "draft", "in_progress", "submitted"].some((token) => value.includes(token))) {
+  if (["planned", "pending", "draft", "in_progress", "submitted", "requested", "approved", "mobilizing", "demobilizing", "staged", "returning", "identified", "analyzing", "validating", "prepared", "monitoring", "new"].some((token) => value.includes(token))) {
     return "bg-[#fff5e8] text-[#8d6c49]";
   }
   return "bg-white/84 text-[#5f5750]";
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const radius = 6371;
+  const toRadians = (value) => (value * Math.PI) / 180;
+  const deltaLat = toRadians(lat2 - lat1);
+  const deltaLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  return radius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function buildFeatureCollection(points) {
+  return {
+    type: "FeatureCollection",
+    features: points.map((point) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [point.longitude, point.latitude] },
+      properties: {
+        id: point.id,
+        title: point.name,
+        status: point.status,
+        sector: point.sector,
+        location: point.region,
+        detail: point.detail,
+      },
+    })),
+  };
 }
 
 function FitMapToPoints({ points }) {
@@ -90,15 +121,15 @@ function FlyToSelectedPoint({ point }) {
   return null;
 }
 
-export default function MapView({ title, description, rows = [] }) {
+export default function MapView({ title, description, rows = [], endpoint = "", search = "" }) {
   const points = useMemo(
     () =>
       rows
         .map((row) => ({
           id: row.id,
           name: row.name || row.title || row.code || `Point ${row.id}`,
-          region: row.city || row.location || row.sector || "Unspecified area",
-          detail: row.essential_service || row.owner_name || row.address || row.summary || "Operational record",
+          region: row.city || row.admin_area || row.location || row.sector || "Unspecified area",
+          detail: row.essential_service || row.essential_function || row.recommended_action || row.owner_name || row.address || row.summary || "Operational record",
           latitude: toNumber(row.latitude),
           longitude: toNumber(row.longitude),
           status: row.mapping_status || row.availability_status || row.status || "-",
@@ -122,6 +153,15 @@ export default function MapView({ title, description, rows = [] }) {
   );
 
   const [selectedPointId, setSelectedPointId] = useState(null);
+  const [analysisRadiusKm, setAnalysisRadiusKm] = useState(25);
+
+  const { data: spatialSummary } = useQuery({
+    queryKey: [endpoint, "spatial-summary", search],
+    queryFn: async () => (await api.get(`${endpoint}spatial-summary/`, { params: search ? { search } : {} })).data,
+    enabled: Boolean(endpoint),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     if (!points.length) {
@@ -135,6 +175,34 @@ export default function MapView({ title, description, rows = [] }) {
   }, [points, selectedPointId]);
 
   const selectedPoint = points.find((point) => point.id === selectedPointId) || points[0] || null;
+  const nearbyCount = useMemo(() => {
+    if (!selectedPoint) return 0;
+    return points.filter((point) => point.id !== selectedPoint.id && haversineKm(selectedPoint.latitude, selectedPoint.longitude, point.latitude, point.longitude) <= analysisRadiusKm).length;
+  }, [analysisRadiusKm, points, selectedPoint]);
+
+  async function handleGeoJsonDownload() {
+    let featureCollection = buildFeatureCollection(points);
+
+    if (endpoint) {
+      try {
+        const response = await api.get(`${endpoint}geojson/`, { params: search ? { search } : {} });
+        if (response?.data?.type === "FeatureCollection") {
+          featureCollection = response.data;
+        }
+      } catch (error) {
+        // Fall back to the visible map points if the full export endpoint is unavailable.
+      }
+    }
+
+    const objectUrl = window.URL.createObjectURL(new Blob([JSON.stringify(featureCollection, null, 2)], { type: "application/geo+json" }));
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = `${String(title || "map_export").replace(/\s+/g, "_").toLowerCase()}.geojson`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(objectUrl);
+  }
 
   return (
     <section className="app-surface rounded-[24px] px-6 py-6">
@@ -155,6 +223,30 @@ export default function MapView({ title, description, rows = [] }) {
         <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Focus</p>
           <p className="mt-1 text-sm font-semibold text-[#111111]">{selectedPoint?.region || "Operational map"}</p>
+        </div>
+        <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
+          <p className="text-[11px] font-semibold text-[#554d46]">Spatial mode</p>
+          <p className="mt-1 text-sm font-semibold text-[#111111]">{spatialSummary?.engine?.postgis ? "PostGIS enabled" : "Lat/Lng analysis"}</p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <select
+            value={analysisRadiusKm}
+            onChange={(event) => setAnalysisRadiusKm(Number(event.target.value))}
+            className="h-9 rounded-[10px] bg-white/88 px-3 text-[11px] font-semibold text-[#111111] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.08)] outline-none"
+          >
+            <option value={10}>10 km</option>
+            <option value={25}>25 km</option>
+            <option value={50}>50 km</option>
+            <option value={100}>100 km</option>
+          </select>
+          <button
+            type="button"
+            onClick={handleGeoJsonDownload}
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-[#111111] px-4 text-[11px] font-semibold text-white transition hover:bg-black/84"
+          >
+            <Download size={14} />
+            GeoJSON
+          </button>
         </div>
       </div>
 
@@ -233,17 +325,21 @@ export default function MapView({ title, description, rows = [] }) {
                 {selectedPoint ? (
                   <div className="pointer-events-none absolute bottom-4 left-4 z-[500] w-full max-w-[360px] pr-4 sm:pr-0">
                     <div className="pointer-events-auto rounded-[16px] bg-white/90 px-4 py-4 shadow-[0_18px_40px_rgba(17,17,17,0.08)] backdrop-blur-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
                           <p className="text-[13px] font-semibold text-[#111111]">{selectedPoint.name}</p>
                           <p className="mt-1 text-[11px] leading-5 text-[#5e5650]">{selectedPoint.region}</p>
-                        </div>
-                        <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-medium ${getStatusTone(selectedPoint.status)}`}>{formatStatusLabel(selectedPoint.status)}</span>
                       </div>
-                      <p className="mt-2 text-[11px] leading-5 text-[#5e5650]">{selectedPoint.detail}</p>
-                      <div className="mt-3 flex items-center gap-2 text-[11px] text-[#6c645d]">
-                        <MapPin size={12} className="text-[#111111]" />
-                        {selectedPoint.latitude}, {selectedPoint.longitude}
+                      <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-medium ${getStatusTone(selectedPoint.status)}`}>{formatStatusLabel(selectedPoint.status)}</span>
+                    </div>
+                    <p className="mt-2 text-[11px] leading-5 text-[#5e5650]">{selectedPoint.detail}</p>
+                    <div className="mt-3 rounded-[12px] bg-[#f8f4ee] px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6c645d]">Nearby analysis</p>
+                      <p className="mt-1 text-[12px] font-semibold text-[#111111]">{nearbyCount} records within {analysisRadiusKm} km</p>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-[11px] text-[#6c645d]">
+                      <MapPin size={12} className="text-[#111111]" />
+                      {selectedPoint.latitude}, {selectedPoint.longitude}
                       </div>
                     </div>
                   </div>

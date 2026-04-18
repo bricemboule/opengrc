@@ -44,10 +44,12 @@ const TEXTAREA_FIELD_NAMES = new Set([
   "recovery_procedure",
   "review_notes",
   "objective",
+  "objectives",
   "agenda",
   "attendees",
   "dial_in_details",
   "minutes",
+  "instruction",
   "outcome_summary",
   "follow_up_actions",
   "gap_summary",
@@ -56,6 +58,39 @@ const TEXTAREA_FIELD_NAMES = new Set([
   "priority_actions",
   "blocker_summary",
   "progress_note",
+  "deployment_notes",
+  "release_notes",
+  "evidence_hint",
+  "escalation_hint",
+  "implementation_guidance",
+  "verification_method",
+  "control_objective",
+  "control_procedure",
+  "measurement_criteria",
+  "evidence_summary",
+  "follow_up_action",
+  "sampling_strategy",
+  "expected_evidence",
+  "finding_summary",
+  "impact_summary",
+  "recommendation",
+  "root_cause",
+  "containment_action",
+  "remediation_expectation",
+  "verification_notes",
+  "action_summary",
+  "dependency_summary",
+  "recommended_action",
+  "remediation_guidance",
+  "scenario_summary",
+  "business_impact",
+  "recommendations",
+  "recommended_actions",
+  "distribution_notes",
+  "message_summary",
+  "action_note",
+  "scope_summary",
+  "content_text",
 ]);
 
 const BOOLEAN_FIELD_NAMES = new Set([
@@ -75,6 +110,16 @@ const INTEGER_FIELD_NAMES = new Set([
   "planned_week",
   "current_maturity",
   "target_maturity",
+  "step_order",
+  "estimated_duration_minutes",
+  "actual_duration_minutes",
+  "mobilization_eta_minutes",
+  "capacity_units",
+  "quantity_requested",
+  "quantity_allocated",
+  "sort_order",
+  "score",
+  "item_order",
 ]);
 
 const DECIMAL_FIELD_NAMES = new Set([
@@ -84,9 +129,9 @@ const DECIMAL_FIELD_NAMES = new Set([
 ]);
 
 const EMAIL_FIELD_NAMES = new Set(["email"]);
-const URL_FIELD_NAMES = new Set(["document_reference", "source_url", "url"]);
+const URL_FIELD_NAMES = new Set(["document_reference", "source_url", "url", "meeting_link", "evidence_reference", "reference_url"]);
 const PASSWORD_FIELD_NAMES = new Set(["password"]);
-const MULTI_RELATION_FIELD_NAMES = new Set(["role_ids", "permission_ids"]);
+const MULTI_RELATION_FIELD_NAMES = new Set(["role_ids", "permission_ids", "stakeholders"]);
 
 export function toLabel(value) {
   return value.replaceAll("_", " ").replace(/(^|\s)\w/g, (character) => character.toUpperCase());

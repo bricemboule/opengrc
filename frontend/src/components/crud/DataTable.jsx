@@ -35,8 +35,17 @@ function formatTemporalValue(value) {
   return value;
 }
 
-function renderCellContent(value) {
+function formatBytes(value) {
+  const size = Number(value);
+  if (!Number.isFinite(size) || size <= 0) return value;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderCellContent(value, columnKey = "") {
   if (value === null || value === undefined || value === "") return "\u2014";
+  if (String(columnKey || "").toLowerCase() === "file_size_bytes") return formatBytes(value);
   if (typeof value === "string") return formatTemporalValue(value);
   return value;
 }
@@ -81,22 +90,68 @@ function getStatusTone(status) {
     case "validated":
     case "approved":
     case "confirmed":
+    case "approved":
+    case "contained":
+    case "recovering":
+    case "acknowledged":
+    case "shared":
+    case "received":
+    case "actioned":
+    case "ready":
+    case "deployed":
+    case "resolved":
+    case "conformant":
+    case "available":
+    case "reviewed":
+    case "mitigated":
+    case "monitored":
       return { badge: "bg-[#f2f0ec] text-[#6f685f]", dot: "bg-[#a9a195]" };
     case "in_progress":
     case "planned":
     case "ongoing":
     case "scheduled":
     case "rescheduled":
+    case "generated":
+    case "reported":
+    case "requested":
+    case "mobilizing":
+    case "demobilizing":
+    case "staged":
+    case "returning":
+    case "identified":
+    case "open":
+    case "accepted":
+    case "remediating":
+    case "partial":
+    case "analyzing":
+    case "validating":
+    case "prepared":
+    case "new":
+    case "monitoring":
       return { badge: "bg-[#f5efe9] text-[#8a6d59]", dot: "bg-[#d0a586]" };
     case "in_review":
     case "submitted":
     case "pending":
+    case "assessing":
+    case "changes_requested":
       return { badge: "bg-[#f3eef1] text-[#7f6975]", dot: "bg-[#bc9dad]" };
     case "missed":
+    case "blocked":
+    case "non_conformant":
+    case "rejected":
+    case "expired":
+    case "declined":
+    case "revoked":
       return { badge: "bg-[#f8ece9] text-[#8b5f56]", dot: "bg-[#d2a29a]" };
     case "archived":
     case "inactive":
     case "cancelled":
+    case "superseded":
+    case "released":
+    case "idle":
+    case "maintenance":
+    case "skipped":
+    case "overdue":
       return { badge: "bg-[#f1f0ef] text-[#76716a]", dot: "bg-[#b2aca4]" };
     default:
       return { badge: "bg-[#f2f1ef] text-[#7a746d]", dot: "bg-[#b8b0a8]" };
@@ -119,7 +174,7 @@ function renderStatusBadge(value) {
 }
 
 function renderTruncatedValue(value, variant, column) {
-  const renderedValue = renderCellContent(value);
+  const renderedValue = renderCellContent(value, column?.key);
   if (renderedValue === "—") return renderedValue;
 
   const label = String(renderedValue);

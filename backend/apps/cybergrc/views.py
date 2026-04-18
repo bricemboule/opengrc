@@ -1,7 +1,10 @@
+from collections import Counter
 from datetime import timedelta
 
+from django.core.files.base import ContentFile
 from django.db.models import Count, DateTimeField, Q
 from django.db.models.functions import Cast, Coalesce
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -11,43 +14,92 @@ from rest_framework.views import APIView
 from apps.core.tenancy import OrganizationScopedQuerySetMixin
 from apps.core.viewsets import SoftDeleteAuditModelViewSet
 
+from .document_generation import TEXT_CONTENT_TYPES, build_document_payload, build_document_summary
 from .models import (
+    Acknowledgement,
     ActionPlanTask,
+    AssetInventoryItem,
     AuditFramework,
+    AuditChecklist,
+    AuditFinding,
+    AuditPlan,
     CapacityAssessment,
+    ConformityAssessment,
     ContingencyPlan,
+    ControlEvidence,
+    CorrectiveAction,
     CriticalInfrastructure,
     CyberStandard,
     DeliverableMilestone,
     DeskStudyReview,
+    DistributionGroup,
     EmergencyResponseAsset,
+    GeneratedDocument,
     GovernanceArtifact,
+    Indicator,
+    InformationShare,
+    ChangeLogEntry,
+    NonConformity,
+    RiskAssessmentReview,
     Phase,
     RiskRegisterEntry,
+    RiskScenario,
+    ReviewCycle,
+    ReviewRecord,
     Sector,
     SimulationExercise,
+    StandardControl,
+    StandardRequirement,
     Stakeholder,
     StakeholderConsultation,
+    ThreatBulletin,
+    ThreatEvent,
     TrainingProgram,
+    VulnerabilityRecord,
 )
 from .serializers import (
+    AcknowledgementSerializer,
     ActionPlanTaskSerializer,
+    AssetInventoryItemSerializer,
     AuditFrameworkSerializer,
+    AuditChecklistSerializer,
+    AuditFindingSerializer,
+    AuditPlanSerializer,
     CapacityAssessmentSerializer,
+    ConformityAssessmentSerializer,
     ContingencyPlanSerializer,
+    ControlEvidenceSerializer,
+    CorrectiveActionSerializer,
     CriticalInfrastructureSerializer,
     CyberStandardSerializer,
     DeliverableMilestoneSerializer,
     DeskStudyReviewSerializer,
+    DistributionGroupSerializer,
     EmergencyResponseAssetSerializer,
+    GeneratedDocumentSerializer,
+    GenerateReportDocumentSerializer,
     GovernanceArtifactSerializer,
+    IndicatorSerializer,
+    InformationShareSerializer,
+    ChangeLogEntrySerializer,
+    NonConformitySerializer,
+    RiskAssessmentReviewSerializer,
     RiskRegisterEntrySerializer,
+    RiskScenarioSerializer,
+    ReviewCycleSerializer,
+    ReviewRecordSerializer,
     SectorSerializer,
     SimulationExerciseSerializer,
+    StandardControlSerializer,
+    StandardRequirementSerializer,
     StakeholderConsultationSerializer,
     StakeholderSerializer,
+    ThreatBulletinSerializer,
+    ThreatEventSerializer,
     TrainingProgramSerializer,
+    VulnerabilityRecordSerializer,
 )
+from .spatial import apply_spatial_filters, build_feature_collection, spatial_backend_summary
 
 
 def scope_queryset_for_user(queryset, user):
@@ -106,6 +158,15 @@ class CyberGrcOverviewView(APIView):
         desk_studies = scope_queryset_for_user(DeskStudyReview.objects.all(), request.user)
         consultations = annotate_consultation_schedule(scope_queryset_for_user(StakeholderConsultation.objects.all(), request.user))
         risks = scope_queryset_for_user(RiskRegisterEntry.objects.all(), request.user)
+        asset_inventory = scope_queryset_for_user(AssetInventoryItem.objects.all(), request.user)
+        threat_events = scope_queryset_for_user(ThreatEvent.objects.all(), request.user)
+        vulnerabilities = scope_queryset_for_user(VulnerabilityRecord.objects.all(), request.user)
+        risk_scenarios = scope_queryset_for_user(RiskScenario.objects.all(), request.user)
+        risk_reviews = scope_queryset_for_user(RiskAssessmentReview.objects.all(), request.user)
+        threat_bulletins = scope_queryset_for_user(ThreatBulletin.objects.all(), request.user)
+        information_shares = scope_queryset_for_user(InformationShare.objects.all(), request.user)
+        generated_documents = scope_queryset_for_user(GeneratedDocument.objects.all(), request.user)
+        review_cycles = scope_queryset_for_user(ReviewCycle.objects.all(), request.user)
         capacity_assessments = scope_queryset_for_user(CapacityAssessment.objects.all(), request.user)
         plans = scope_queryset_for_user(ContingencyPlan.objects.all(), request.user)
         exercises = scope_queryset_for_user(SimulationExercise.objects.all(), request.user)
@@ -117,6 +178,15 @@ class CyberGrcOverviewView(APIView):
 
         deliverables_by_phase = list(deliverables.values("phase").annotate(total=Count("id")).order_by("phase"))
         critical_risk_rows = risks.filter(risk_level__in=["high", "critical"]).select_related("infrastructure").order_by("-risk_score", "response_deadline")[:5]
+        critical_threat_rows = threat_events.filter(severity__in=["high", "critical"]).select_related("related_infrastructure").order_by("status", "-first_seen_at", "id")[:5]
+        due_risk_review_rows = risk_reviews.exclude(status__in=["completed", "archived"]).filter(
+            Q(follow_up_date__isnull=False) | Q(review_date__isnull=False)
+        ).order_by("follow_up_date", "review_date", "id")[:5]
+        pending_share_rows = information_shares.exclude(status__in=["closed"]).filter(
+            Q(acknowledgement_due_date__isnull=False) | Q(shared_at__isnull=False)
+        ).order_by("acknowledgement_due_date", "shared_at", "id")[:5]
+        review_cycle_rows = review_cycles.exclude(status__in=["completed", "archived"]).filter(next_review_date__isnull=False).order_by("next_review_date", "id")[:5]
+        generated_document_rows = generated_documents.exclude(status__in=["approved", "archived", "superseded"]).order_by("-generated_on", "id")[:5]
         upcoming_exercise_rows = exercises.filter(status__in=["planned", "in_progress"]).order_by("planned_date", "id")[:5]
         due_deliverable_rows = deliverables.exclude(status__in=["completed", "validated", "archived"]).order_by("due_date", "planned_week", "id")[:5]
         desk_study_rows = desk_studies.exclude(status__in=["completed", "archived"]).order_by("due_date", "priority", "id")[:5]
@@ -182,11 +252,60 @@ class CyberGrcOverviewView(APIView):
                 "statuses": build_choice_summary(artifacts, "status", GovernanceArtifact._meta.get_field("status").choices),
             },
             {
+                "name": "Asset inventory",
+                "route": "asset-inventory",
+                "field": "status",
+                "total": asset_inventory.count(),
+                "statuses": build_choice_summary(asset_inventory, "status", AssetInventoryItem._meta.get_field("status").choices),
+            },
+            {
                 "name": "Risk treatment",
                 "route": "risk-register",
                 "field": "treatment_status",
                 "total": risks.count(),
                 "statuses": build_choice_summary(risks, "treatment_status", RiskRegisterEntry._meta.get_field("treatment_status").choices),
+            },
+            {
+                "name": "Threat monitoring",
+                "route": "threat-events",
+                "field": "status",
+                "total": threat_events.count(),
+                "statuses": build_choice_summary(threat_events, "status", ThreatEvent._meta.get_field("status").choices),
+            },
+            {
+                "name": "Vulnerability tracking",
+                "route": "vulnerability-records",
+                "field": "status",
+                "total": vulnerabilities.count(),
+                "statuses": build_choice_summary(vulnerabilities, "status", VulnerabilityRecord._meta.get_field("status").choices),
+            },
+            {
+                "name": "Risk scenario design",
+                "route": "risk-scenarios",
+                "field": "status",
+                "total": risk_scenarios.count(),
+                "statuses": build_choice_summary(risk_scenarios, "status", RiskScenario._meta.get_field("status").choices),
+            },
+            {
+                "name": "Threat information sharing",
+                "route": "information-shares",
+                "field": "status",
+                "total": information_shares.count(),
+                "statuses": build_choice_summary(information_shares, "status", InformationShare._meta.get_field("status").choices),
+            },
+            {
+                "name": "Document generation",
+                "route": "generated-documents",
+                "field": "status",
+                "total": generated_documents.count(),
+                "statuses": build_choice_summary(generated_documents, "status", GeneratedDocument._meta.get_field("status").choices),
+            },
+            {
+                "name": "Review cadence",
+                "route": "review-cycles",
+                "field": "status",
+                "total": review_cycles.count(),
+                "statuses": build_choice_summary(review_cycles, "status", ReviewCycle._meta.get_field("status").choices),
             },
             {
                 "name": "Capacity assessment",
@@ -260,6 +379,34 @@ class CyberGrcOverviewView(APIView):
                 "criticality_level": item.get_criticality_level_display(),
             }
             for item in infrastructure.exclude(latitude__isnull=True).exclude(longitude__isnull=True).order_by("name", "id")
+        ] + [
+            {
+                "id": f"asset-{item.id}",
+                "name": item.name,
+                "code": item.code,
+                "sector": item.sector,
+                "location": item.location or item.admin_area,
+                "essential_service": item.essential_function,
+                "latitude": item.latitude,
+                "longitude": item.longitude,
+                "mapping_status": item.get_status_display(),
+                "criticality_level": item.get_criticality_level_display(),
+            }
+            for item in asset_inventory.exclude(latitude__isnull=True).exclude(longitude__isnull=True).order_by("name", "id")
+        ] + [
+            {
+                "id": f"threat-{item.id}",
+                "name": item.title,
+                "code": item.get_threat_type_display(),
+                "sector": item.related_infrastructure.sector if item.related_infrastructure else "",
+                "location": item.location or item.admin_area,
+                "essential_service": item.summary,
+                "latitude": item.latitude,
+                "longitude": item.longitude,
+                "mapping_status": item.get_status_display(),
+                "criticality_level": item.get_severity_display(),
+            }
+            for item in threat_events.exclude(latitude__isnull=True).exclude(longitude__isnull=True).select_related("related_infrastructure").order_by("title", "id")
         ]
 
         attention_items = sort_attention(
@@ -274,6 +421,61 @@ class CyberGrcOverviewView(APIView):
                         "context": risk.infrastructure.name if risk.infrastructure else "",
                     }
                     for risk in critical_risk_rows
+                ],
+                *[
+                    {
+                        "type": "threat_event",
+                        "title": event.title,
+                        "route": "threat-events",
+                        "severity": event.get_severity_display(),
+                        "due_date": event.last_seen_at or event.first_seen_at,
+                        "context": " / ".join(part for part in [event.get_threat_type_display(), event.related_infrastructure.name if event.related_infrastructure else ""] if part),
+                    }
+                    for event in critical_threat_rows
+                ],
+                *[
+                    {
+                        "type": "risk_review",
+                        "title": review.title,
+                        "route": "risk-assessment-reviews",
+                        "severity": review.get_residual_risk_level_display(),
+                        "due_date": review.follow_up_date or review.review_date,
+                        "context": review.get_decision_display(),
+                    }
+                    for review in due_risk_review_rows
+                ],
+                *[
+                    {
+                        "type": "information_share",
+                        "title": share.title,
+                        "route": "information-shares",
+                        "severity": share.get_status_display(),
+                        "due_date": share.acknowledgement_due_date or share.shared_at,
+                        "context": share.get_share_channel_display(),
+                    }
+                    for share in pending_share_rows
+                ],
+                *[
+                    {
+                        "type": "review_cycle",
+                        "title": cycle.title,
+                        "route": "review-cycles",
+                        "severity": cycle.get_status_display(),
+                        "due_date": cycle.next_review_date,
+                        "context": cycle.current_version_label or cycle.module_label,
+                    }
+                    for cycle in review_cycle_rows
+                ],
+                *[
+                    {
+                        "type": "generated_document",
+                        "title": document.title,
+                        "route": "generated-documents",
+                        "severity": document.get_status_display(),
+                        "due_date": document.generated_on,
+                        "context": document.version_label or document.module_label,
+                    }
+                    for document in generated_document_rows
                 ],
                 *[
                     {
@@ -358,10 +560,17 @@ class CyberGrcOverviewView(APIView):
             "audit_frameworks": audits.count(),
             "training_programs": trainings.count(),
             "simulation_exercises": exercises.count(),
+            "asset_inventory": asset_inventory.count(),
+            "threat_events": threat_events.count(),
+            "risk_scenarios": risk_scenarios.count(),
+            "threat_bulletins": threat_bulletins.count(),
+            "generated_documents": generated_documents.count(),
+            "review_cycles": review_cycles.count(),
             "messages_ready": True,
             "mapping_coverage": round((mapped_total / infrastructure_total) * 100, 1) if infrastructure_total else 0,
             "overdue_deliverables": deliverables.exclude(status__in=["completed", "validated", "archived"]).filter(due_date__lt=today).count(),
-            "reviews_due": sum(1 for item in review_queue if getattr(item, "next_review_date", None) and item.next_review_date <= today),
+            "reviews_due": sum(1 for item in review_queue if getattr(item, "next_review_date", None) and item.next_review_date <= today)
+            + review_cycles.exclude(status__in=["completed", "archived"]).filter(next_review_date__lte=today).count(),
             "blocked_actions": blocked_actions,
             "capacity_due": capacity_due,
             "pending_consultations": pending_consultations,
@@ -369,11 +578,18 @@ class CyberGrcOverviewView(APIView):
             "priority_distribution": build_choice_summary(risks, "risk_level", RiskRegisterEntry._meta.get_field("risk_level").choices),
             "charts": [
                 {"name": "Infrastructure", "total": infrastructure_total},
+                {"name": "Assets", "total": asset_inventory.count()},
                 {"name": "Desk Studies", "total": desk_studies.count()},
                 {"name": "High Risks", "total": risks.filter(risk_level__in=["high", "critical"]).count()},
+                {"name": "Threats", "total": threat_events.count()},
+                {"name": "Scenarios", "total": risk_scenarios.count()},
                 {"name": "Capacity", "total": capacity_assessments.count()},
                 {"name": "Consultations", "total": consultations.count()},
                 {"name": "Plans", "total": plans.count()},
+                {"name": "Bulletins", "total": threat_bulletins.count()},
+                {"name": "Shares", "total": information_shares.count()},
+                {"name": "Documents", "total": generated_documents.count()},
+                {"name": "Review Cycles", "total": review_cycles.count()},
                 {"name": "Actions", "total": action_tasks.count()},
                 {"name": "Training", "total": trainings.count()},
             ],
@@ -499,12 +715,93 @@ class StakeholderViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelVi
     ordering_fields = ["id", "name", "sector", "created_at"]
 
 
-class CriticalInfrastructureViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+class SpatialDatasetViewSetMixin:
+    spatial_lat_field = "latitude"
+    spatial_lng_field = "longitude"
+    spatial_title_field = "name"
+    spatial_status_field = "status"
+    spatial_sector_field = "sector"
+    spatial_area_field = "admin_area"
+    spatial_location_field = "location"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        request = getattr(self, "request", None)
+        if not request:
+            return queryset
+        if getattr(self, "action", None) in {"list", "geojson", "spatial_summary"}:
+            queryset = apply_spatial_filters(
+                queryset,
+                request,
+                lat_field=self.spatial_lat_field,
+                lng_field=self.spatial_lng_field,
+            )
+        return queryset
+
+    def _spatial_rows(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        fields = [
+            "id",
+            self.spatial_title_field,
+            self.spatial_status_field,
+            self.spatial_sector_field,
+            self.spatial_area_field,
+            self.spatial_location_field,
+            self.spatial_lat_field,
+            self.spatial_lng_field,
+        ]
+        rows = list(queryset.values(*fields))
+        return rows
+
+    @action(detail=False, methods=["get"], url_path="geojson")
+    def geojson(self, request):
+        return Response(
+            build_feature_collection(
+                self._spatial_rows(),
+                title_field=self.spatial_title_field,
+                lat_field=self.spatial_lat_field,
+                lng_field=self.spatial_lng_field,
+                status_field=self.spatial_status_field,
+            )
+        )
+
+    @action(detail=False, methods=["get"], url_path="spatial-summary")
+    def spatial_summary(self, request):
+        rows = self._spatial_rows()
+        geolocated = [row for row in rows if row.get(self.spatial_lat_field) is not None and row.get(self.spatial_lng_field) is not None]
+        bounds = None
+        if geolocated:
+            latitudes = [float(row[self.spatial_lat_field]) for row in geolocated]
+            longitudes = [float(row[self.spatial_lng_field]) for row in geolocated]
+            bounds = {
+                "min_lat": min(latitudes),
+                "max_lat": max(latitudes),
+                "min_lng": min(longitudes),
+                "max_lng": max(longitudes),
+            }
+
+        top_sectors = Counter(row.get(self.spatial_sector_field) or "Unspecified sector" for row in geolocated).most_common(5)
+        top_areas = Counter((row.get(self.spatial_area_field) or row.get(self.spatial_location_field) or "Unspecified area") for row in geolocated).most_common(5)
+
+        return Response(
+            {
+                "engine": spatial_backend_summary(),
+                "total_rows": len(rows),
+                "geolocated_rows": len(geolocated),
+                "bounds": bounds,
+                "top_sectors": [{"label": label, "count": count} for label, count in top_sectors],
+                "top_areas": [{"label": label, "count": count} for label, count in top_areas],
+            }
+        )
+
+
+class CriticalInfrastructureViewSet(SpatialDatasetViewSetMixin, OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
     queryset = CriticalInfrastructure.objects.select_related("organization", "owner_stakeholder", "sector_ref").all()
     serializer_class = CriticalInfrastructureSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ["code", "name", "sector", "sector_ref__name", "owner_name", "essential_service", "location"]
     ordering_fields = ["id", "name", "criticality_level", "mapping_status", "created_at"]
+    spatial_status_field = "mapping_status"
 
 
 class GovernanceArtifactViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
@@ -597,12 +894,33 @@ class ContingencyPlanViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditMod
     ordering_fields = ["id", "title", "plan_type", "status", "next_review_date", "created_at"]
 
 
-class EmergencyResponseAssetViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+class EmergencyResponseAssetViewSet(SpatialDatasetViewSetMixin, OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
     queryset = EmergencyResponseAsset.objects.select_related("organization", "contingency_plan", "infrastructure", "owner_stakeholder").all()
     serializer_class = EmergencyResponseAssetSerializer
     permission_classes = [IsAuthenticated]
-    search_fields = ["name", "asset_type", "owner_name", "owner_stakeholder__name", "location", "activation_notes"]
-    ordering_fields = ["id", "name", "priority", "availability_status", "created_at"]
+    search_fields = [
+        "name",
+        "asset_type",
+        "owner_name",
+        "owner_stakeholder__name",
+        "location",
+        "activation_notes",
+        "deployment_status",
+    ]
+    ordering_fields = [
+        "id",
+        "name",
+        "priority",
+        "availability_status",
+        "deployment_status",
+        "mobilization_eta_minutes",
+        "capacity_units",
+        "last_readiness_check",
+        "created_at",
+    ]
+    spatial_sector_field = "owner_name"
+    spatial_area_field = "location"
+    spatial_status_field = "availability_status"
 
 
 class SimulationExerciseViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
@@ -627,6 +945,359 @@ class AuditFrameworkViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditMode
     permission_classes = [IsAuthenticated]
     search_fields = ["title", "scope", "audit_frequency", "compliance_focus", "review_notes"]
     ordering_fields = ["id", "title", "status", "next_review_date", "created_at"]
+
+
+class StandardRequirementViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = StandardRequirement.objects.select_related("organization", "related_standard").all()
+    serializer_class = StandardRequirementSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["code", "title", "chapter", "owner_name", "summary", "implementation_guidance", "verification_method"]
+    ordering_fields = ["id", "code", "title", "status", "priority", "sort_order", "created_at"]
+
+
+class StandardControlViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = StandardControl.objects.select_related("organization", "related_standard", "related_requirement").all()
+    serializer_class = StandardControlSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["code", "title", "domain", "owner_name", "control_objective", "control_procedure", "measurement_criteria"]
+    ordering_fields = ["id", "code", "title", "status", "priority", "sort_order", "created_at"]
+
+
+class ConformityAssessmentViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ConformityAssessment.objects.select_related(
+        "organization",
+        "related_standard",
+        "related_requirement",
+        "related_control",
+        "related_framework",
+        "target_stakeholder",
+        "related_infrastructure",
+    ).all()
+    serializer_class = ConformityAssessmentSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "assessor_name", "evidence_summary", "gap_summary", "recommendation_summary", "follow_up_action"]
+    ordering_fields = ["id", "title", "status", "conformity_level", "assessed_on", "next_review_date", "score", "created_at"]
+
+
+class ControlEvidenceViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ControlEvidence.objects.select_related(
+        "organization",
+        "related_assessment",
+        "related_standard",
+        "related_requirement",
+        "related_control",
+    ).all()
+    serializer_class = ControlEvidenceSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "reference_label", "owner_name", "reference_url", "notes"]
+    ordering_fields = ["id", "title", "status", "captured_on", "validity_until", "created_at"]
+
+
+class AuditPlanViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = AuditPlan.objects.select_related(
+        "organization",
+        "related_framework",
+        "related_standard",
+        "target_stakeholder",
+        "related_infrastructure",
+    ).all()
+    serializer_class = AuditPlanSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "scope", "lead_auditor", "summary", "next_step"]
+    ordering_fields = ["id", "title", "status", "planned_start_date", "planned_end_date", "actual_end_date", "created_at"]
+
+
+class AuditChecklistViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = AuditChecklist.objects.select_related("organization", "audit_plan", "related_requirement", "related_control").all()
+    serializer_class = AuditChecklistSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "verification_procedure", "expected_evidence", "finding_summary", "notes"]
+    ordering_fields = ["id", "title", "status", "item_order", "created_at"]
+
+
+class AuditFindingViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = AuditFinding.objects.select_related(
+        "organization",
+        "audit_plan",
+        "checklist_item",
+        "related_assessment",
+        "related_requirement",
+        "related_control",
+    ).all()
+    serializer_class = AuditFindingSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "owner_name", "impact_summary", "recommendation", "notes"]
+    ordering_fields = ["id", "title", "severity", "status", "due_date", "created_at"]
+
+
+class NonConformityViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = NonConformity.objects.select_related(
+        "organization",
+        "audit_finding",
+        "related_assessment",
+        "related_requirement",
+        "related_control",
+    ).all()
+    serializer_class = NonConformitySerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "owner_name", "root_cause", "containment_action", "remediation_expectation", "verification_notes"]
+    ordering_fields = ["id", "title", "severity", "status", "due_date", "created_at"]
+
+
+class CorrectiveActionViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = CorrectiveAction.objects.select_related(
+        "organization",
+        "related_finding",
+        "related_non_conformity",
+        "related_assessment",
+        "related_control",
+        "related_infrastructure",
+    ).all()
+    serializer_class = CorrectiveActionSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "owner_name", "action_summary", "success_metric", "blocker_summary", "verification_notes"]
+    ordering_fields = ["id", "title", "priority", "status", "start_date", "due_date", "completed_date", "created_at"]
+
+
+class AssetInventoryItemViewSet(SpatialDatasetViewSetMixin, OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = AssetInventoryItem.objects.select_related("organization", "owner_stakeholder", "related_infrastructure", "sector_ref").all()
+    serializer_class = AssetInventoryItemSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["code", "name", "asset_type", "sector", "sector_ref__name", "owner_name", "essential_function", "admin_area", "location", "summary"]
+    ordering_fields = ["id", "code", "name", "asset_type", "criticality_level", "status", "created_at"]
+
+
+class ThreatEventViewSet(SpatialDatasetViewSetMixin, OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ThreatEvent.objects.select_related("organization", "reporting_stakeholder", "related_infrastructure", "asset_item").all()
+    serializer_class = ThreatEventSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = [
+        "title",
+        "threat_type",
+        "threat_source_type",
+        "status",
+        "suspected_actor",
+        "summary",
+        "recommended_action",
+        "admin_area",
+        "location",
+    ]
+    ordering_fields = ["id", "title", "status", "severity", "confidence_level", "first_seen_at", "last_seen_at", "created_at"]
+
+
+class VulnerabilityRecordViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = VulnerabilityRecord.objects.select_related("organization", "related_infrastructure", "asset_item", "related_threat_event").all()
+    serializer_class = VulnerabilityRecordSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "vulnerability_type", "owner_name", "summary", "remediation_guidance", "notes"]
+    ordering_fields = ["id", "title", "status", "severity", "exploitability_level", "discovered_on", "remediation_due_date", "created_at"]
+
+
+class RiskScenarioViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = RiskScenario.objects.select_related(
+        "organization",
+        "risk_register_entry",
+        "related_infrastructure",
+        "asset_item",
+        "related_threat_event",
+        "vulnerability_record",
+    ).all()
+    serializer_class = RiskScenarioSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "scenario_owner", "scenario_summary", "business_impact", "response_plan", "notes"]
+    ordering_fields = ["id", "title", "status", "risk_level", "treatment_status", "risk_score", "review_due_date", "created_at"]
+
+
+class RiskAssessmentReviewViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = RiskAssessmentReview.objects.select_related("organization", "risk_scenario", "risk_register_entry", "reviewer_stakeholder").all()
+    serializer_class = RiskAssessmentReviewSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "summary", "recommendations", "notes"]
+    ordering_fields = ["id", "title", "status", "review_date", "follow_up_date", "residual_risk_level", "created_at"]
+
+
+class ThreatBulletinViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ThreatBulletin.objects.select_related("organization", "related_threat_event", "related_infrastructure", "target_sector_ref").all()
+    serializer_class = ThreatBulletinSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "bulletin_type", "target_sector", "target_sector_ref__name", "summary", "recommended_actions", "source_reference"]
+    ordering_fields = ["id", "title", "status", "severity", "issued_on", "valid_until", "created_at"]
+
+
+class IndicatorViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = Indicator.objects.select_related("organization", "related_bulletin", "related_threat_event").all()
+    serializer_class = IndicatorSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "value", "indicator_type", "status", "notes"]
+    ordering_fields = ["id", "title", "indicator_type", "status", "first_seen_at", "last_seen_at", "created_at"]
+
+
+class DistributionGroupViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = DistributionGroup.objects.select_related("organization", "target_sector_ref").prefetch_related("stakeholders").all()
+    serializer_class = DistributionGroupSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "group_type", "target_sector", "target_sector_ref__name", "distribution_notes", "stakeholders__name"]
+    ordering_fields = ["id", "title", "group_type", "status", "created_at"]
+
+
+class InformationShareViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = InformationShare.objects.select_related(
+        "organization",
+        "related_bulletin",
+        "related_threat_event",
+        "distribution_group",
+        "target_stakeholder",
+    ).all()
+    serializer_class = InformationShareSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "share_channel", "status", "message_summary", "action_requested", "access_link"]
+    ordering_fields = ["id", "title", "status", "share_channel", "shared_at", "acknowledgement_due_date", "created_at"]
+
+
+class AcknowledgementViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = Acknowledgement.objects.select_related("organization", "information_share", "stakeholder").all()
+    serializer_class = AcknowledgementSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["information_share__title", "stakeholder__name", "action_note", "notes"]
+    ordering_fields = ["id", "status", "responded_at", "created_at"]
+
+
+def build_download_filename(document):
+    safe_title = "".join(character if character.isalnum() or character in {"-", "_"} else "_" for character in (document.title or "generated_document"))
+    extension = {
+        "markdown": "md",
+        "text": "txt",
+        "json": "json",
+        "pdf": "pdf",
+        "docx": "docx",
+    }.get(document.output_format, "txt")
+    return f"{safe_title}_{document.version_label or f'v{document.version_number}'}.{extension}"
+
+
+class GeneratedDocumentViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = GeneratedDocument.objects.select_related("organization").all()
+    serializer_class = GeneratedDocumentSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "module_key", "module_label", "record_title", "summary", "generated_by_name", "approved_by_name", "status"]
+    ordering_fields = ["id", "title", "status", "generated_on", "published_on", "version_number", "created_at"]
+
+    @action(detail=False, methods=["post"], url_path="generate-report")
+    def generate_report(self, request):
+        request_serializer = GenerateReportDocumentSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        organization = getattr(user, "organization", None)
+        if organization is None:
+            return Response({"detail": "A workspace organization is required to generate documents."}, status=400)
+
+        validated = request_serializer.validated_data
+        module_key = validated["module_key"]
+        module_label = validated.get("module_label") or module_key.replace("_", " ").replace("-", " ").title()
+        document_type = validated["document_type"]
+        output_format = validated["output_format"]
+        record_id = validated.get("record_id")
+        record_title = validated.get("record_title", "")
+        rows = validated["rows"]
+        report_preset = validated.get("report_preset", "")
+        search_term = validated.get("search", "")
+
+        version_number = (
+            self.get_queryset()
+            .filter(module_key=module_key, record_id=record_id, document_type=document_type)
+            .count()
+            + 1
+        )
+        version_label = f"v{version_number}"
+        title = validated.get("title") or f"{module_label} {document_type.replace('_', ' ')} {version_label}"
+        try:
+            payload = build_document_payload(
+                title=title,
+                module_label=module_label,
+                report_preset=report_preset,
+                document_type=document_type,
+                output_format=output_format,
+                rows=rows,
+                search_term=search_term,
+            )
+        except RuntimeError as exc:
+            return Response({"detail": str(exc)}, status=400)
+        filename = build_download_filename(
+            type(
+                "GeneratedName",
+                (),
+                {"title": title, "version_label": version_label, "version_number": version_number, "output_format": output_format},
+            )()
+        )
+
+        document = GeneratedDocument.objects.create(
+            organization=organization,
+            title=title,
+            module_key=module_key,
+            module_label=module_label,
+            record_id=record_id,
+            record_title=record_title,
+            document_type=document_type,
+            output_format=output_format,
+            version_number=version_number,
+            version_label=version_label,
+            generated_by_name=user.get_full_name() or user.email,
+            summary=build_document_summary(module_label, len(rows), document_type, search_term),
+            content_text=payload["content_text"],
+            mime_type=payload["mime_type"],
+            file_size_bytes=len(payload["file_bytes"]),
+            source_snapshot={
+                "report_preset": report_preset,
+                "rows": rows,
+                "columns": validated.get("columns", []),
+                "search": search_term,
+            },
+            created_by=user,
+            updated_by=user,
+        )
+        document.generated_file.save(filename, ContentFile(payload["file_bytes"]), save=False)
+        document.save(update_fields=["generated_file", "mime_type", "file_size_bytes", "updated_at"])
+
+        serializer = self.get_serializer(document)
+        return Response(serializer.data, status=201)
+
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, pk=None):
+        document = self.get_object()
+        content_type = document.mime_type or TEXT_CONTENT_TYPES.get(document.output_format, "text/plain; charset=utf-8")
+        payload = document.content_text or ""
+        if document.generated_file:
+            document.generated_file.open("rb")
+            payload = document.generated_file.read()
+            document.generated_file.close()
+
+        response = HttpResponse(payload, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{build_download_filename(document)}"'
+        return response
+
+
+class ReviewCycleViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ReviewCycle.objects.select_related("organization", "generated_document").all()
+    serializer_class = ReviewCycleSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "module_key", "module_label", "record_title", "owner_name", "scope_summary", "notes"]
+    ordering_fields = ["id", "title", "status", "last_review_date", "next_review_date", "created_at"]
+
+
+class ReviewRecordViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ReviewRecord.objects.select_related("organization", "review_cycle", "generated_document").all()
+    serializer_class = ReviewRecordSerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "reviewer_name", "summary", "recommendations", "notes"]
+    ordering_fields = ["id", "title", "status", "decision", "review_date", "next_review_date", "created_at"]
+
+
+class ChangeLogEntryViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):
+    queryset = ChangeLogEntry.objects.select_related("organization", "generated_document", "review_cycle", "review_record").all()
+    serializer_class = ChangeLogEntrySerializer
+    permission_classes = [IsAuthenticated]
+    search_fields = ["title", "module_key", "module_label", "record_title", "change_type", "summary", "changed_by_name"]
+    ordering_fields = ["id", "title", "change_type", "changed_on", "created_at"]
 
 
 class TrainingProgramViewSet(OrganizationScopedQuerySetMixin, SoftDeleteAuditModelViewSet):

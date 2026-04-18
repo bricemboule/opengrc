@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, ClipboardList, Folder, MapPin, Settings, Shield, Target } from "lucide-react";
+import { Activity, AlertCircle, ClipboardList, Download, FileText, Folder, MapPin, Settings, Shield, Target } from "lucide-react";
 import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Link, useSearchParams } from "react-router-dom";
 import PageHeader from "../components/crud/PageHeader";
@@ -14,6 +14,7 @@ import ConsultationCalendarView from "../components/crud/ConsultationCalendarVie
 import Import from "../components/crud/Import";
 import MapView from "../components/crud/MapView";
 import OperationalReportView from "../components/crud/OperationalReportView";
+import SopExecutionView from "../components/incident/SopExecutionView";
 import WorkflowBoard from "../components/crud/WorkflowBoard";
 import { buildFieldList, buildInitialValues, normalizeErrors, serializePayload } from "../components/crud/crudUtils";
 import usePaginatedList from "../hooks/usePaginatedList";
@@ -25,15 +26,48 @@ import { notifyError, notifySuccess } from "../utils/toast";
 
 const ENHANCED_PAGINATION_MODULE_KEYS = new Set([
   "risk_register_entries",
+  "asset_inventory_items",
+  "threat_events",
+  "vulnerability_records",
+  "risk_scenarios",
+  "risk_assessment_reviews",
+  "threat_bulletins",
+  "indicators",
+  "distribution_groups",
+  "information_shares",
+  "acknowledgements",
+  "generated_documents",
+  "review_cycles",
+  "review_records",
+  "change_log_entries",
   "capacity_assessments",
   "training_programs",
   "contingency_plans",
   "emergency_response_assets",
   "simulation_exercises",
   "cyber_standards",
+  "standard_requirements",
+  "standard_controls",
+  "conformity_assessments",
+  "control_evidence",
   "audit_frameworks",
+  "audit_plans",
+  "audit_checklists",
+  "audit_findings",
+  "non_conformities",
+  "corrective_actions",
   "deliverable_milestones",
   "action_plan_tasks",
+  "incidents",
+  "incident_updates",
+  "incident_tasks",
+  "incident_assignments",
+  "incident_communications",
+  "incident_attachments",
+  "sop_templates",
+  "sop_steps",
+  "sop_executions",
+  "asset_allocations",
 ]);
 const ENHANCED_PAGINATION_DEFAULT_PAGE_SIZE = 10;
 const STANDARD_PAGE_SIZE = 20;
@@ -131,19 +165,25 @@ function getStakeholderStatusTone(status) {
 }
 
 function getModuleSectionIcon(moduleKey) {
-  if (["cybergrc_stakeholders", "desk_study_reviews", "stakeholder_consultations", "critical_infrastructure", "governance_artifacts"].includes(moduleKey)) return MapPin;
-  if (["risk_register_entries", "capacity_assessments", "training_programs"].includes(moduleKey)) return Activity;
+  if (["incidents", "incident_updates", "incident_tasks", "incident_assignments", "incident_communications", "incident_attachments", "sop_templates", "sop_steps", "sop_executions", "asset_allocations"].includes(moduleKey)) return AlertCircle;
+  if (["cybergrc_stakeholders", "desk_study_reviews", "stakeholder_consultations", "critical_infrastructure", "governance_artifacts", "asset_inventory_items"].includes(moduleKey)) return MapPin;
+  if (["risk_register_entries", "threat_events", "vulnerability_records", "risk_scenarios", "risk_assessment_reviews", "capacity_assessments", "training_programs"].includes(moduleKey)) return Activity;
+  if (["threat_bulletins", "indicators", "distribution_groups", "information_shares", "acknowledgements"].includes(moduleKey)) return Folder;
+  if (["generated_documents", "review_cycles", "review_records", "change_log_entries"].includes(moduleKey)) return FileText;
   if (["contingency_plans", "emergency_response_assets", "simulation_exercises"].includes(moduleKey)) return Target;
-  if (["cyber_standards", "audit_frameworks"].includes(moduleKey)) return Shield;
+  if (["cyber_standards", "standard_requirements", "standard_controls", "conformity_assessments", "control_evidence", "audit_frameworks", "audit_plans", "audit_checklists", "audit_findings", "non_conformities", "corrective_actions"].includes(moduleKey)) return Shield;
   if (["deliverable_milestones", "action_plan_tasks"].includes(moduleKey)) return ClipboardList;
   return null;
 }
 
 function getModuleFormEyebrow(moduleKey) {
-  if (["cybergrc_stakeholders", "desk_study_reviews", "stakeholder_consultations", "critical_infrastructure", "governance_artifacts"].includes(moduleKey)) return "Governance & Mapping";
-  if (["risk_register_entries", "capacity_assessments", "training_programs"].includes(moduleKey)) return "Risk & Capacity";
+  if (["incidents", "incident_updates", "incident_tasks", "incident_assignments", "incident_communications", "incident_attachments", "sop_templates", "sop_steps", "sop_executions", "asset_allocations"].includes(moduleKey)) return "Incident Operations";
+  if (["cybergrc_stakeholders", "desk_study_reviews", "stakeholder_consultations", "critical_infrastructure", "governance_artifacts", "asset_inventory_items"].includes(moduleKey)) return "Governance & Mapping";
+  if (["risk_register_entries", "threat_events", "vulnerability_records", "risk_scenarios", "risk_assessment_reviews", "capacity_assessments", "training_programs"].includes(moduleKey)) return "Risk & Capacity";
+  if (["threat_bulletins", "indicators", "distribution_groups", "information_shares", "acknowledgements"].includes(moduleKey)) return "Threat & Sharing";
+  if (["generated_documents", "review_cycles", "review_records", "change_log_entries"].includes(moduleKey)) return "Documents & Review";
   if (["contingency_plans", "emergency_response_assets", "simulation_exercises"].includes(moduleKey)) return "Contingency Planning";
-  if (["cyber_standards", "audit_frameworks"].includes(moduleKey)) return "Standards & Audit";
+  if (["cyber_standards", "standard_requirements", "standard_controls", "conformity_assessments", "control_evidence", "audit_frameworks", "audit_plans", "audit_checklists", "audit_findings", "non_conformities", "corrective_actions"].includes(moduleKey)) return "Standards & Audit";
   if (["deliverable_milestones", "action_plan_tasks"].includes(moduleKey)) return "Delivery Tracking";
   return "Cyber GRC";
 }
@@ -169,6 +209,11 @@ function getQueryErrorMessage(error, fallback = "An error occurred while loading
   if (payload?.detail) return String(payload.detail);
   if (payload?.message) return String(payload.message);
   return error?.message || fallback;
+}
+
+function extractFilenameFromDisposition(disposition) {
+  const match = String(disposition || "").match(/filename=\"?([^\";]+)\"?/i);
+  return match?.[1] || "";
 }
 
 function getModePresentation(config, activeMode) {
@@ -239,6 +284,14 @@ function getModePresentation(config, activeMode) {
     };
   }
 
+  if (activeMode === "execute") {
+    return {
+      pageTitle: getViewLabel(config, "execute"),
+      pageDescription: `Run the active checklist, unblock delayed steps, and keep ${config?.label?.toLowerCase()} execution current.`,
+      searchPlaceholder: `Filter ${config?.label?.toLowerCase()} executions...`,
+    };
+  }
+
   if (activeMode === "report") {
     return {
       pageTitle: getViewLabel(config, "report"),
@@ -263,6 +316,8 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const [formValues, setFormValues] = useState({});
   const [formErrors, setFormErrors] = useState({});
   const [isImporting, setIsImporting] = useState(false);
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false);
+  const [documentFormat, setDocumentFormat] = useState("pdf");
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [pendingDeleteItem, setPendingDeleteItem] = useState(null);
   const queryClient = useQueryClient();
@@ -361,7 +416,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   const workflowChoices = workflowFieldConfig?.choices || [];
   const reportPreset = moduleBehavior.reportPreset;
   const isOperationalReportMode = activeMode === "report" && Boolean(reportPreset);
-  const needsExtendedRows = activeMode === "map" || activeMode === "workflow" || activeMode === "calendar" || isReportMode(activeMode);
+  const needsExtendedRows = activeMode === "map" || activeMode === "workflow" || activeMode === "calendar" || activeMode === "execute" || isReportMode(activeMode);
   const rows = data?.results || data || [];
   const totalRowCount = typeof data?.count === "number" ? data.count : rows.length;
   const shouldFetchExtendedRows = needsExtendedRows && totalRowCount > rows.length;
@@ -570,6 +625,53 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
     await updateMutation.mutateAsync({ id: item.id, payload: { [workflowField]: nextValue } });
   }
 
+  async function handleGenerateReportDocument() {
+    if (!config?.key || !reportRows.length) return;
+
+    setIsGeneratingDocument(true);
+    try {
+      const response = await api.post("/cybergrc/generated-documents/generate-report/", {
+        module_key: config.key,
+        module_label: config.label,
+        report_preset: reportPreset,
+        title: `${config.label} report`,
+        output_format: documentFormat,
+        rows: reportRows,
+        columns: displayColumns.map((column) => ({ key: column.key, label: column.label })),
+        search,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["generated_documents"] });
+      notifySuccess(`Document generated in ${documentFormat.toUpperCase()}: ${response.data?.title || `${config.label} report`}`);
+    } catch (error) {
+      notifyError(getQueryErrorMessage(error, "Unable to generate the report document."));
+    } finally {
+      setIsGeneratingDocument(false);
+    }
+  }
+
+  async function handleDownloadGeneratedDocument(row) {
+    if (!row?.id) return;
+
+    try {
+      const response = await api.get(`/cybergrc/generated-documents/${row.id}/download/`, {
+        responseType: "blob",
+      });
+      const filename =
+        extractFilenameFromDisposition(response.headers?.["content-disposition"]) ||
+        `${String(row.title || "generated_document").replace(/\s+/g, "_")}.${row.output_format === "pdf" ? "pdf" : row.output_format === "docx" ? "docx" : row.output_format === "json" ? "json" : row.output_format === "markdown" ? "md" : "txt"}`;
+      const objectUrl = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      notifyError(getQueryErrorMessage(error, "Unable to download this document."));
+    }
+  }
+
   function getRowId(row, rowIndex) {
     return row.id ?? `${config?.key || routeModuleKey}-${rowIndex}`;
   }
@@ -665,6 +767,15 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                 activeMode === "list" && formFields.length
                   ? (row) => (
                       <div className="flex justify-start gap-2">
+                        {config.key === "generated_documents" ? (
+                          <button
+                            onClick={() => handleDownloadGeneratedDocument(row)}
+                            className="flex h-9 w-9 items-center justify-center text-[#111111] transition hover:text-black/70"
+                            aria-label={`Download ${row.title || config.label}`}
+                          >
+                            <Download size={14} strokeWidth={2} />
+                          </button>
+                        ) : null}
                         <button
                           onClick={() => {
                             setEditingItem(row);
@@ -730,7 +841,43 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
         />
       ) : null}
 
-      {isOperationalReportMode ? <OperationalReportView config={{ ...config, reportPreset }} rows={reportRows} columns={displayColumns} /> : null}
+      {isOperationalReportMode ? (
+        <OperationalReportView
+          config={{ ...config, reportPreset }}
+          rows={reportRows}
+          columns={displayColumns}
+          onGenerateDocument={config.key !== "generated_documents" ? handleGenerateReportDocument : null}
+          isGeneratingDocument={isGeneratingDocument}
+          documentFormat={documentFormat}
+          onDocumentFormatChange={setDocumentFormat}
+          rowActions={
+            config.key === "generated_documents"
+              ? (row) => (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadGeneratedDocument(row)}
+                      className="inline-flex h-8 items-center gap-1 rounded-full bg-[#111111] px-3.5 text-[11px] font-semibold text-white transition hover:bg-black/84"
+                    >
+                      <Download size={12} strokeWidth={2} />
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingItem(row);
+                        setFormErrors({});
+                      }}
+                      className="inline-flex h-8 items-center rounded-full bg-[#f3efe8] px-3.5 text-[11px] font-semibold text-[#111111] transition hover:bg-[#ece6dc]"
+                    >
+                      Open
+                    </button>
+                  </div>
+                )
+              : null
+          }
+        />
+      ) : null}
 
       {activeMode === "create" || activeMode === "edit" ? (
         <Create
@@ -773,10 +920,33 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
       ) : null}
 
       {activeMode === "map" ? (
-        <MapView title={`Map of ${config.label.toLowerCase()}`} description={`Operational map of ${config.label.toLowerCase()} with usable coordinates.`} rows={filteredExtendedRows} />
+        <MapView
+          title={`Map of ${config.label.toLowerCase()}`}
+          description={`Operational map of ${config.label.toLowerCase()} with usable coordinates.`}
+          rows={filteredExtendedRows}
+          endpoint={config.endpoint}
+          search={search}
+        />
       ) : null}
 
       {activeMode === "calendar" ? <ConsultationCalendarView rows={filteredExtendedRows} /> : null}
+
+      {activeMode === "execute" ? (
+        <SopExecutionView
+          rows={filteredExtendedRows}
+          workflowChoices={workflowChoices}
+          onEdit={(row) => {
+            setEditingItem(row);
+            setFormErrors({});
+          }}
+          onRefresh={async () => {
+            await refetch();
+            if (shouldFetchExtendedRows) {
+              await refetchExtended();
+            }
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         isOpen={Boolean(pendingDeleteItem)}
@@ -793,7 +963,3 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
     </div>
   );
 }
-
-
-
-

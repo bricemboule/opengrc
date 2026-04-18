@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgis/postgis:16-3.4
     container_name: opengrc_db
     restart: unless-stopped
     environment:
@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: relief_pass
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U relief_user -d relief_db"]
       interval: 10s

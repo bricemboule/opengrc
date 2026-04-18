@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.communications",
     "apps.cybergrc",
+    "apps.incident_management",
 
     "apps.core.files",
     "apps.hr",
@@ -95,7 +96,7 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis" if config("ENABLE_POSTGIS", cast=bool, default=False) else "django.db.backends.postgresql",
         "NAME": config("DB_NAME", default="relief_db"),
         "USER": config("DB_USER", default="relief_user"),
         "PASSWORD": config("DB_PASSWORD", default="relief_pass"),
@@ -103,6 +104,10 @@ DATABASES = {
         "PORT": config("DB_PORT", cast=int, default=5432),
     }
 }
+
+SPATIAL_ANALYSIS_DEFAULT_RADIUS_KM = config("SPATIAL_ANALYSIS_DEFAULT_RADIUS_KM", cast=int, default=25)
+SPATIAL_ANALYSIS_MAX_RADIUS_KM = config("SPATIAL_ANALYSIS_MAX_RADIUS_KM", cast=int, default=250)
+SPATIAL_REFERENCE_SRID = config("SPATIAL_REFERENCE_SRID", cast=int, default=4326)
 
 AUTH_USER_MODEL = "accounts.User"
 LANGUAGE_CODE = "en-gb"
@@ -186,6 +191,22 @@ CELERY_BEAT_SCHEDULE = {
     "consultation-meeting-reminders": {
         "task": "apps.cybergrc.tasks.send_consultation_reminders",
         "schedule": crontab(minute="*/15"),
+    },
+    "compliance-reminders": {
+        "task": "apps.cybergrc.tasks.send_compliance_reminders",
+        "schedule": crontab(hour=7, minute=0),
+    },
+    "threat-and-risk-reminders": {
+        "task": "apps.cybergrc.tasks.send_threat_and_risk_reminders",
+        "schedule": crontab(hour=7, minute=20),
+    },
+    "document-review-reminders": {
+        "task": "apps.cybergrc.tasks.send_document_review_reminders",
+        "schedule": crontab(hour=7, minute=35),
+    },
+    "incident-management-reminders": {
+        "task": "apps.incident_management.tasks.send_incident_reminders",
+        "schedule": crontab(minute="*/20"),
     },
 }
 

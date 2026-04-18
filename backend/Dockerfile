@@ -7,7 +7,12 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     build-essential \
+    binutils \
+    gdal-bin \
+    libgdal-dev \
+    libgeos-dev \
     libpq-dev \
+    libproj-dev \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 

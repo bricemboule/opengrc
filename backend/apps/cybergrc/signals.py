@@ -1,25 +1,51 @@
+from datetime import timedelta
+
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from .models import (
+    Acknowledgement,
     ActionPlanTask,
+    AssetInventoryItem,
     AuditFramework,
+    AuditChecklist,
+    AuditFinding,
+    AuditPlan,
     CapacityAssessment,
+    ConformityAssessment,
     ContingencyPlan,
+    ControlEvidence,
+    CorrectiveAction,
     CriticalInfrastructure,
     CyberStandard,
     DeliverableMilestone,
     DeskStudyReview,
+    DistributionGroup,
     EmergencyResponseAsset,
+    GeneratedDocument,
     GovernanceArtifact,
+    Indicator,
+    InformationShare,
+    ChangeLogEntry,
+    NonConformity,
+    RiskAssessmentReview,
     RiskRegisterEntry,
+    RiskScenario,
+    ReviewCycle,
+    ReviewRecord,
     SimulationExercise,
+    StandardControl,
+    StandardRequirement,
     Stakeholder,
     StakeholderConsultation,
+    ThreatBulletin,
+    ThreatEvent,
     TrainingProgram,
+    VulnerabilityRecord,
 )
 from .notifications import broadcast_notification
+from .spatial import sync_point_geometry
 
 STATUS_MESSAGES = {
     "draft": "moved to draft",
@@ -44,7 +70,36 @@ STATUS_MESSAGES = {
     "ready": "is now ready",
     "constrained": "is now constrained",
     "unavailable": "is now unavailable",
+    "identified": "identified",
+    "remediating": "entered remediation",
+    "resolved": "resolved",
+    "open": "opened",
+    "rejected": "rejected",
+    "expired": "expired",
+    "reviewed": "reviewed",
+    "analyzing": "entered analysis",
+    "monitored": "is now monitored",
+    "mitigated": "was mitigated",
+    "validating": "entered validation",
+    "prepared": "was prepared",
+    "shared": "was shared",
+    "received": "was received",
+    "actioned": "was actioned",
+    "declined": "was declined",
+    "revoked": "was revoked",
+    "generated": "was generated",
+    "overdue": "is overdue",
+    "superseded": "was superseded",
+    "changes_requested": "needs changes",
 }
+
+
+@receiver(pre_save, sender=CriticalInfrastructure)
+@receiver(pre_save, sender=EmergencyResponseAsset)
+@receiver(pre_save, sender=AssetInventoryItem)
+@receiver(pre_save, sender=ThreatEvent)
+def sync_geometry_before_save(sender, instance, **kwargs):
+    sync_point_geometry(instance)
 
 
 def format_schedule_value(value):
@@ -123,7 +178,7 @@ def notify_due_date(instance, created, label, date_field="due_date", title_attr=
     if getattr(instance, status_field, "") in terminal_values:
         return
 
-    title = getattr(instance, title_attr, str(instance))
+    title = getattr(instance, title_attr, "") or str(instance)
     broadcast_notification(f"{label} scheduled: {title} on {due_date}", organization=getattr(instance, "organization", None))
 
 
@@ -135,8 +190,78 @@ def notify_workflow_transition(instance, created, label, title_attr="title", fie
     if not message:
         return
 
-    title = getattr(instance, title_attr, str(instance))
+    title = getattr(instance, title_attr, "") or str(instance)
     broadcast_notification(f"{label} {message}: {title}", organization=getattr(instance, "organization", None))
+
+
+def create_change_log_entry(
+    *,
+    organization,
+    title,
+    change_type,
+    summary="",
+    generated_document=None,
+    review_cycle=None,
+    review_record=None,
+    module_key="",
+    module_label="",
+    record_id=None,
+    record_title="",
+    version_label="",
+    changed_by_name="",
+    change_metadata=None,
+):
+    if not organization:
+        return
+
+    ChangeLogEntry.objects.create(
+        organization=organization,
+        generated_document=generated_document,
+        review_cycle=review_cycle,
+        review_record=review_record,
+        title=title,
+        module_key=module_key,
+        module_label=module_label,
+        record_id=record_id,
+        record_title=record_title,
+        change_type=change_type,
+        version_label=version_label,
+        summary=summary,
+        change_metadata=change_metadata or {},
+        changed_by_name=changed_by_name,
+    )
+
+
+def sync_review_outcomes(instance):
+    review_cycle = instance.review_cycle
+    generated_document = instance.generated_document
+
+    if review_cycle:
+        review_cycle.last_review_date = instance.review_date
+        if instance.next_review_date:
+            review_cycle.next_review_date = instance.next_review_date
+        elif review_cycle.cadence_days and instance.review_date:
+            review_cycle.next_review_date = instance.review_date + timedelta(days=review_cycle.cadence_days)
+        review_cycle.current_version_label = instance.version_label or review_cycle.current_version_label or ""
+        review_cycle.status = "completed" if instance.decision == "approved" and not review_cycle.next_review_date else "active"
+        if review_cycle.next_review_date and review_cycle.next_review_date < timezone.localdate() and review_cycle.status not in {"completed", "archived"}:
+            review_cycle.status = "overdue"
+        review_cycle.save(update_fields=["last_review_date", "next_review_date", "current_version_label", "status", "updated_at"])
+
+    if generated_document:
+        update_fields = ["updated_at"]
+        if instance.decision == "approved":
+            generated_document.status = "approved"
+            generated_document.published_on = timezone.now()
+            generated_document.approved_by_name = instance.reviewer_name
+            update_fields.extend(["status", "published_on", "approved_by_name"])
+        elif instance.decision == "superseded":
+            generated_document.status = "superseded"
+            update_fields.append("status")
+        else:
+            generated_document.status = "in_review"
+            update_fields.append("status")
+        generated_document.save(update_fields=update_fields)
 
 
 @receiver(pre_save, sender=Stakeholder)
@@ -184,6 +309,71 @@ def snapshot_capacity_state(sender, instance, **kwargs):
     snapshot_previous_state(sender, instance, ["status", "due_date", "gap_level"])
 
 
+@receiver(pre_save, sender=AssetInventoryItem)
+def snapshot_asset_inventory_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "criticality_level"])
+
+
+@receiver(pre_save, sender=ThreatEvent)
+def snapshot_threat_event_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "severity", "last_seen_at"])
+
+
+@receiver(pre_save, sender=VulnerabilityRecord)
+def snapshot_vulnerability_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "severity", "remediation_due_date"])
+
+
+@receiver(pre_save, sender=RiskScenario)
+def snapshot_risk_scenario_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "risk_level", "treatment_status", "review_due_date"])
+
+
+@receiver(pre_save, sender=RiskAssessmentReview)
+def snapshot_risk_review_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "decision", "follow_up_date"])
+
+
+@receiver(pre_save, sender=ThreatBulletin)
+def snapshot_threat_bulletin_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "severity", "issued_on", "valid_until"])
+
+
+@receiver(pre_save, sender=Indicator)
+def snapshot_indicator_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "last_seen_at"])
+
+
+@receiver(pre_save, sender=DistributionGroup)
+def snapshot_distribution_group_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status"])
+
+
+@receiver(pre_save, sender=GeneratedDocument)
+def snapshot_generated_document_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "published_on", "version_label"])
+
+
+@receiver(pre_save, sender=ReviewCycle)
+def snapshot_review_cycle_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "next_review_date", "current_version_label"])
+
+
+@receiver(pre_save, sender=ReviewRecord)
+def snapshot_review_record_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "decision", "next_review_date"])
+
+
+@receiver(pre_save, sender=InformationShare)
+def snapshot_information_share_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "shared_at", "acknowledgement_due_date"])
+
+
+@receiver(pre_save, sender=Acknowledgement)
+def snapshot_acknowledgement_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "responded_at"])
+
+
 @receiver(pre_save, sender=ContingencyPlan)
 def snapshot_plan_state(sender, instance, **kwargs):
     snapshot_previous_state(sender, instance, ["status", "next_review_date"])
@@ -197,6 +387,51 @@ def snapshot_standard_state(sender, instance, **kwargs):
 @receiver(pre_save, sender=AuditFramework)
 def snapshot_audit_state(sender, instance, **kwargs):
     snapshot_previous_state(sender, instance, ["status", "next_review_date"])
+
+
+@receiver(pre_save, sender=StandardRequirement)
+def snapshot_requirement_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status"])
+
+
+@receiver(pre_save, sender=StandardControl)
+def snapshot_control_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status"])
+
+
+@receiver(pre_save, sender=ConformityAssessment)
+def snapshot_conformity_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "conformity_level", "next_review_date"])
+
+
+@receiver(pre_save, sender=ControlEvidence)
+def snapshot_control_evidence_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "validity_until"])
+
+
+@receiver(pre_save, sender=AuditPlan)
+def snapshot_audit_plan_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "planned_start_date", "planned_end_date"])
+
+
+@receiver(pre_save, sender=AuditChecklist)
+def snapshot_audit_checklist_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "result"])
+
+
+@receiver(pre_save, sender=AuditFinding)
+def snapshot_audit_finding_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "severity", "due_date"])
+
+
+@receiver(pre_save, sender=NonConformity)
+def snapshot_non_conformity_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "severity", "due_date"])
+
+
+@receiver(pre_save, sender=CorrectiveAction)
+def snapshot_corrective_action_state(sender, instance, **kwargs):
+    snapshot_previous_state(sender, instance, ["status", "due_date", "blocker_summary"])
 
 
 @receiver(pre_save, sender=EmergencyResponseAsset)
@@ -318,6 +553,259 @@ def notify_capacity_activity(sender, instance, created, **kwargs):
     notify_workflow_transition(instance, created, "Capacity assessment")
 
 
+@receiver(post_save, sender=AssetInventoryItem)
+def notify_asset_inventory_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Asset inventory item", title_attr="name")
+
+    if instance.criticality_level in {"high", "critical"} and (
+        field_changed(instance, "criticality_level", created) or field_changed(instance, "status", created)
+    ):
+        broadcast_notification(
+            f"Critical asset inventory item flagged: {instance.name}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=ThreatEvent)
+def notify_threat_event_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Threat event")
+
+    if instance.severity in {"high", "critical"} and (
+        field_changed(instance, "severity", created) or field_changed(instance, "status", created)
+    ):
+        broadcast_notification(
+            f"High-priority threat event detected: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=VulnerabilityRecord)
+def notify_vulnerability_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Vulnerability remediation",
+        date_field="remediation_due_date",
+        status_field="status",
+        terminal_values={"resolved", "closed"},
+    )
+    notify_workflow_transition(instance, created, "Vulnerability record")
+
+
+@receiver(post_save, sender=RiskScenario)
+def notify_risk_scenario_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Risk scenario review",
+        date_field="review_due_date",
+        status_field="status",
+        terminal_values={"completed", "archived"},
+    )
+    notify_workflow_transition(instance, created, "Risk scenario")
+    notify_workflow_transition(instance, created, "Risk scenario treatment", field_name="treatment_status")
+
+    if instance.risk_level in {"high", "critical"} and (
+        field_changed(instance, "risk_level", created) or field_changed(instance, "treatment_status", created)
+    ):
+        broadcast_notification(
+            f"High-priority risk scenario logged: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=RiskAssessmentReview)
+def notify_risk_review_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Risk assessment follow-up",
+        date_field="follow_up_date",
+        status_field="status",
+        terminal_values={"completed", "archived"},
+    )
+    notify_workflow_transition(instance, created, "Risk assessment review")
+
+    if field_changed(instance, "decision", created):
+        broadcast_notification(
+            f"Risk review decision recorded: {instance.title} set to {instance.get_decision_display().lower()}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=ThreatBulletin)
+def notify_threat_bulletin_activity(sender, instance, created, **kwargs):
+    if instance.issued_on and (
+        field_changed(instance, "issued_on", created) or field_changed(instance, "status", created)
+    ) and instance.status not in {"archived"}:
+        broadcast_notification(
+            f"Threat bulletin issued: {instance.title} on {instance.issued_on}",
+            organization=getattr(instance, "organization", None),
+        )
+
+    notify_due_date(
+        instance,
+        created,
+        "Threat bulletin validity",
+        date_field="valid_until",
+        status_field="status",
+        terminal_values={"archived"},
+    )
+    notify_workflow_transition(instance, created, "Threat bulletin")
+
+
+@receiver(post_save, sender=Indicator)
+def notify_indicator_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Threat indicator")
+
+
+@receiver(post_save, sender=DistributionGroup)
+def notify_distribution_group_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Distribution group", title_attr="title")
+
+
+@receiver(post_save, sender=InformationShare)
+def notify_information_share_activity(sender, instance, created, **kwargs):
+    if instance.shared_at and (
+        field_changed(instance, "shared_at", created) or field_changed(instance, "status", created)
+    ) and instance.status in {"shared", "acknowledged", "closed"}:
+        broadcast_notification(
+            f"Information share released: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+    notify_due_date(
+        instance,
+        created,
+        "Information share acknowledgement",
+        date_field="acknowledgement_due_date",
+        status_field="status",
+        terminal_values={"closed"},
+    )
+    notify_workflow_transition(instance, created, "Information share")
+
+
+@receiver(post_save, sender=Acknowledgement)
+def notify_acknowledgement_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Information acknowledgement", title_attr="action_note")
+
+
+@receiver(post_save, sender=GeneratedDocument)
+def notify_generated_document_activity(sender, instance, created, **kwargs):
+    if created:
+        broadcast_notification(
+            f"Generated document ready: {instance.title} ({instance.version_label})",
+            organization=getattr(instance, "organization", None),
+        )
+        create_change_log_entry(
+            organization=instance.organization,
+            generated_document=instance,
+            title=instance.title,
+            change_type="generated",
+            summary=f"Generated {instance.get_document_type_display().lower()} {instance.version_label}.",
+            module_key=instance.module_key,
+            module_label=instance.module_label,
+            record_id=instance.record_id,
+            record_title=instance.record_title,
+            version_label=instance.version_label,
+            changed_by_name=instance.generated_by_name,
+        )
+        return
+
+    notify_workflow_transition(instance, created, "Generated document")
+
+    if field_changed(instance, "status", created):
+        change_type = {
+            "approved": "approved",
+            "superseded": "superseded",
+            "archived": "archived",
+        }.get(instance.status, "updated")
+        create_change_log_entry(
+            organization=instance.organization,
+            generated_document=instance,
+            title=instance.title,
+            change_type=change_type,
+            summary=f"Document moved to {instance.get_status_display().lower()}.",
+            module_key=instance.module_key,
+            module_label=instance.module_label,
+            record_id=instance.record_id,
+            record_title=instance.record_title,
+            version_label=instance.version_label,
+            changed_by_name=instance.approved_by_name or instance.generated_by_name,
+        )
+
+
+@receiver(post_save, sender=ReviewCycle)
+def notify_review_cycle_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Review cycle",
+        date_field="next_review_date",
+        status_field="status",
+        terminal_values={"completed", "archived"},
+    )
+    notify_workflow_transition(instance, created, "Review cycle")
+
+    if created or field_changed(instance, "next_review_date", created) or field_changed(instance, "status", created):
+        create_change_log_entry(
+            organization=instance.organization,
+            review_cycle=instance,
+            generated_document=instance.generated_document,
+            title=instance.title,
+            change_type="updated",
+            summary=(
+                f"Review cycle updated with next review on {instance.next_review_date}."
+                if instance.next_review_date
+                else "Review cycle updated."
+            ),
+            module_key=instance.module_key,
+            module_label=instance.module_label,
+            record_id=instance.record_id,
+            record_title=instance.record_title,
+            version_label=instance.current_version_label,
+            changed_by_name=instance.owner_name,
+        )
+
+
+@receiver(post_save, sender=ReviewRecord)
+def notify_review_record_activity(sender, instance, created, **kwargs):
+    sync_review_outcomes(instance)
+
+    if created or field_changed(instance, "decision", created):
+        broadcast_notification(
+            f"Review recorded: {instance.title} marked as {instance.get_decision_display().lower()}",
+            organization=getattr(instance, "organization", None),
+        )
+
+    notify_due_date(
+        instance,
+        created,
+        "Review follow-up",
+        date_field="next_review_date",
+        status_field="status",
+        terminal_values={"completed", "archived"},
+    )
+    notify_workflow_transition(instance, created, "Review record")
+
+    if created or field_changed(instance, "decision", created) or field_changed(instance, "status", created):
+        create_change_log_entry(
+            organization=instance.organization,
+            generated_document=instance.generated_document,
+            review_cycle=instance.review_cycle,
+            review_record=instance,
+            title=instance.title,
+            change_type="review_recorded" if instance.decision not in {"approved", "superseded"} else instance.decision,
+            summary=f"Review decision recorded as {instance.get_decision_display().lower()}.",
+            module_key=getattr(instance.review_cycle, "module_key", "") or getattr(instance.generated_document, "module_key", ""),
+            module_label=getattr(instance.review_cycle, "module_label", "") or getattr(instance.generated_document, "module_label", ""),
+            record_id=getattr(instance.review_cycle, "record_id", None) or getattr(instance.generated_document, "record_id", None),
+            record_title=getattr(instance.review_cycle, "record_title", "") or getattr(instance.generated_document, "record_title", ""),
+            version_label=instance.version_label,
+            changed_by_name=instance.reviewer_name,
+        )
+
+
 @receiver(post_save, sender=ContingencyPlan)
 def notify_plan_activity(sender, instance, created, **kwargs):
     notify_review_schedule(instance, created, "Contingency plan")
@@ -339,6 +827,104 @@ def notify_standard_activity(sender, instance, created, **kwargs):
 def notify_audit_activity(sender, instance, created, **kwargs):
     notify_review_schedule(instance, created, "Audit framework")
     notify_workflow_transition(instance, created, "Audit framework")
+
+
+@receiver(post_save, sender=StandardRequirement)
+def notify_requirement_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Standard requirement")
+
+
+@receiver(post_save, sender=StandardControl)
+def notify_control_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Standard control")
+
+
+@receiver(post_save, sender=ConformityAssessment)
+def notify_conformity_activity(sender, instance, created, **kwargs):
+    notify_review_schedule(instance, created, "Conformity assessment")
+    notify_workflow_transition(instance, created, "Conformity assessment")
+
+    if instance.conformity_level == "non_conformant" and (
+        field_changed(instance, "conformity_level", created) or field_changed(instance, "status", created)
+    ):
+        broadcast_notification(
+            f"Non-conformant assessment flagged: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=ControlEvidence)
+def notify_control_evidence_activity(sender, instance, created, **kwargs):
+    if instance.validity_until and field_changed(instance, "validity_until", created):
+        broadcast_notification(
+            f"Evidence validity updated: {instance.title} valid until {instance.validity_until}",
+            organization=getattr(instance, "organization", None),
+        )
+    notify_workflow_transition(instance, created, "Control evidence")
+
+
+@receiver(post_save, sender=AuditPlan)
+def notify_audit_plan_activity(sender, instance, created, **kwargs):
+    if instance.planned_start_date and (
+        field_changed(instance, "planned_start_date", created) or field_changed(instance, "status", created)
+    ) and instance.status not in {"completed", "archived"}:
+        broadcast_notification(
+            f"Audit plan scheduled: {instance.title} starts on {instance.planned_start_date}",
+            organization=getattr(instance, "organization", None),
+        )
+    notify_workflow_transition(instance, created, "Audit plan")
+
+
+@receiver(post_save, sender=AuditChecklist)
+def notify_audit_checklist_activity(sender, instance, created, **kwargs):
+    notify_workflow_transition(instance, created, "Audit checklist item")
+
+
+@receiver(post_save, sender=AuditFinding)
+def notify_audit_finding_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Audit finding",
+        status_field="status",
+        terminal_values={"resolved", "closed"},
+    )
+    notify_workflow_transition(instance, created, "Audit finding")
+
+    if instance.severity in {"high", "critical"} and (
+        field_changed(instance, "severity", created) or field_changed(instance, "status", created)
+    ):
+        broadcast_notification(
+            f"High-severity audit finding: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+
+@receiver(post_save, sender=NonConformity)
+def notify_non_conformity_activity(sender, instance, created, **kwargs):
+    notify_due_date(
+        instance,
+        created,
+        "Non-conformity",
+        status_field="status",
+        terminal_values={"resolved", "closed"},
+    )
+    notify_workflow_transition(instance, created, "Non-conformity")
+
+
+@receiver(post_save, sender=CorrectiveAction)
+def notify_corrective_action_activity(sender, instance, created, **kwargs):
+    notify_due_date(instance, created, "Corrective action")
+
+    if instance.blocker_summary and (
+        field_changed(instance, "blocker_summary", created) or field_changed(instance, "status", created)
+    ) and instance.status not in {"completed", "archived"}:
+        broadcast_notification(
+            f"Corrective action blocker flagged: {instance.title}",
+            organization=getattr(instance, "organization", None),
+        )
+
+    notify_workflow_transition(instance, created, "Corrective action")
 
 
 @receiver(post_save, sender=TrainingProgram)
