@@ -13,7 +13,7 @@ export default function BarChartCard({ title, data = [], dataKey, xKey }) {
       <div className="mt-5 h-72 sm:h-80">
         {data.length ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barCategoryGap={18}>
+            <BarChart data={data} barCategoryGap={18} barSize={20} maxBarSize={22}>
               <CartesianGrid vertical={false} stroke="rgba(17,17,17,0.08)" />
               <XAxis dataKey={xKey} axisLine={false} tickLine={false} tick={{ fill: "#78716c", fontSize: 12 }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: "#78716c", fontSize: 12 }} />

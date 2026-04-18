@@ -5,6 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Crosshair, Download, Layers3, MapPin } from "lucide-react";
 import api from "../../api/client";
+import MenuSelect from "../ui/MenuSelect";
 
 const DEFAULT_CENTER = [13.454876, -16.579032];
 const TILE_LAYER_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
@@ -229,16 +230,19 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
           <p className="mt-1 text-sm font-semibold text-[#111111]">{spatialSummary?.engine?.postgis ? "PostGIS enabled" : "Lat/Lng analysis"}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <select
+          <MenuSelect
             value={analysisRadiusKm}
-            onChange={(event) => setAnalysisRadiusKm(Number(event.target.value))}
-            className="h-9 rounded-[10px] bg-white/88 px-3 text-[11px] font-semibold text-[#111111] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.08)] outline-none"
-          >
-            <option value={10}>10 km</option>
-            <option value={25}>25 km</option>
-            <option value={50}>50 km</option>
-            <option value={100}>100 km</option>
-          </select>
+            onChange={(nextValue) => setAnalysisRadiusKm(Number(nextValue))}
+            ariaLabel="Select analysis radius"
+            options={[
+              { value: 10, label: "10 km" },
+              { value: 25, label: "25 km" },
+              { value: 50, label: "50 km" },
+              { value: 100, label: "100 km" },
+            ]}
+            triggerClassName="min-w-[6.25rem] bg-white/88 shadow-[inset_0_0_0_1px_rgba(17,17,17,0.08)]"
+            menuClassName="min-w-[6.25rem]"
+          />
           <button
             type="button"
             onClick={handleGeoJsonDownload}

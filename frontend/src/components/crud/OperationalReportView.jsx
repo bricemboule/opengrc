@@ -1,5 +1,6 @@
 import DataTable from "./DataTable";
 import EmptyState from "./EmptyState";
+import MenuSelect from "../ui/MenuSelect";
 
 function daysUntil(dateValue) {
   const target = new Date(dateValue);
@@ -885,17 +886,20 @@ export default function OperationalReportView({
             <h3 className="text-sm font-semibold text-[#554d46]">Detailed report</h3>
             {onGenerateDocument ? (
               <div className="flex flex-wrap items-center gap-2">
-                <select
+                <MenuSelect
                   value={documentFormat}
-                  onChange={(event) => onDocumentFormatChange?.(event.target.value)}
-                  className="h-9 rounded-[10px] bg-white px-3 text-[11px] font-semibold text-[#111111] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.08)] outline-none transition focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.2)]"
-                >
-                  <option value="pdf">PDF</option>
-                  <option value="docx">DOCX</option>
-                  <option value="markdown">Markdown</option>
-                  <option value="text">Plain text</option>
-                  <option value="json">JSON</option>
-                </select>
+                  onChange={(nextValue) => onDocumentFormatChange?.(nextValue)}
+                  ariaLabel="Select export format"
+                  options={[
+                    { value: "pdf", label: "PDF" },
+                    { value: "docx", label: "DOCX" },
+                    { value: "markdown", label: "Markdown" },
+                    { value: "text", label: "Plain text" },
+                    { value: "json", label: "JSON" },
+                  ]}
+                  triggerClassName="min-w-[8.75rem] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.08)]"
+                  menuClassName="min-w-[8.75rem]"
+                />
                 <button
                   type="button"
                   onClick={onGenerateDocument}
