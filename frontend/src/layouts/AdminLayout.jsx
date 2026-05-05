@@ -77,11 +77,30 @@ export default function AdminLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("opengrc-sidebar-collapsed") === "true";
   });
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 1023px)").matches;
+  });
+  const [isCompactSidebarOpen, setIsCompactSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("opengrc-sidebar-collapsed", String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const handleViewportChange = () => {
+      setIsCompactViewport(mediaQuery.matches);
+      if (!mediaQuery.matches) setIsCompactSidebarOpen(false);
+    };
+
+    handleViewportChange();
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => mediaQuery.removeEventListener("change", handleViewportChange);
+  }, []);
 
   useEffect(() => {
     setOpenDropdowns((current) =>
@@ -97,6 +116,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     setIsNotificationsOpen(false);
+    if (isCompactViewport) setIsCompactSidebarOpen(false);
   }, [location.pathname, location.search]);
 
   useEffect(() => {
@@ -168,24 +188,46 @@ export default function AdminLayout() {
 
   function openSettings() {
     navigate("/settings");
+    if (isCompactViewport) setIsCompactSidebarOpen(false);
+  }
+
+  function toggleSidebar() {
+    if (isCompactViewport) {
+      setIsCompactSidebarOpen((current) => !current);
+      return;
+    }
+
+    setIsSidebarCollapsed((current) => !current);
+  }
+
+  function closeCompactSidebar() {
+    if (isCompactViewport) setIsCompactSidebarOpen(false);
   }
 
   const isSettingsRoute = location.pathname === "/settings";
-  const sidebarWidth = isSidebarCollapsed ? "96px" : "290px";
+  const isNavigationCollapsed = isCompactViewport ? !isCompactSidebarOpen : isSidebarCollapsed;
+  const sidebarWidth = isCompactViewport ? (isCompactSidebarOpen ? "min(290px, calc(100vw - 24px))" : "84px") : isSidebarCollapsed ? "96px" : "290px";
+  const sidebarOffset = isCompactViewport ? "84px" : sidebarWidth;
 
   return (
     <div className="min-h-screen">
-      <div className="min-h-screen xl:block" style={{ "--sidebar-width": sidebarWidth }}>
-        <aside className="app-glass flex min-h-screen flex-col border-r border-slate-200/70 px-5 py-6 transition-[width] duration-300 ease-out xl:fixed xl:inset-y-0 xl:left-0 xl:z-30 xl:h-screen xl:w-[var(--sidebar-width)]">
-          <div className={`flex w-full items-center ${isSidebarCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}>
-            <BrandLogo title="OpenGRC" compact collapsed={isSidebarCollapsed} />
+      <div className="min-h-screen" style={{ "--sidebar-width": sidebarWidth, "--sidebar-offset": sidebarOffset }}>
+        {isCompactViewport && isCompactSidebarOpen ? <button type="button" aria-label="Close sidebar" onClick={() => setIsCompactSidebarOpen(false)} className="fixed inset-0 z-20 bg-black/10 backdrop-blur-[2px]" /> : null}
+
+        <aside
+          className={`app-glass fixed inset-y-0 left-0 z-30 flex h-screen min-h-screen w-[var(--sidebar-width)] flex-col border-r border-slate-200/70 px-5 py-6 transition-[width,box-shadow] duration-300 ease-out ${
+            isCompactViewport && isCompactSidebarOpen ? "shadow-[18px_0_54px_rgba(17,17,17,0.12)]" : ""
+          }`}
+        >
+          <div className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}>
+            <BrandLogo title="OpenGRC" compact collapsed={isNavigationCollapsed} />
             <button
               type="button"
-              onClick={() => setIsSidebarCollapsed((current) => !current)}
-              className={`${isSidebarCollapsed ? "" : "ml-auto"} flex h-10 w-10 items-center justify-center rounded-full text-[#5e5650]/55 transition hover:bg-white/66 hover:text-[#111111] active:text-[#111111]`}
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={toggleSidebar}
+              className={`${isNavigationCollapsed ? "" : "ml-auto"} flex h-10 w-10 items-center justify-center rounded-full text-[#5e5650]/55 transition hover:bg-white/66 hover:text-[#111111] active:text-[#111111]`}
+              aria-label={isNavigationCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {isSidebarCollapsed ? <PanelLeftOpen size={18} strokeWidth={1.8} /> : <PanelLeftClose size={18} strokeWidth={1.8} />}
+              {isNavigationCollapsed ? <PanelLeftOpen size={18} strokeWidth={1.8} /> : <PanelLeftClose size={18} strokeWidth={1.8} />}
             </button>
           </div>
 
@@ -202,24 +244,24 @@ export default function AdminLayout() {
                     <button
                       type="button"
                       onClick={() => toggleDropdown(item.key)}
-                      title={isSidebarCollapsed ? item.label : undefined}
-                      className={`flex w-full items-center ${isSidebarCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "justify-between gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${
+                      title={isNavigationCollapsed ? item.label : undefined}
+                      className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "justify-between gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${
                         isActive ? "bg-[#111111] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"
                       }`}
                       style={{ fontSize: "12px", lineHeight: "1.2" }}
                     >
-                      <span className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+                      <span className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
                         <span className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}>
                           <Icon size={16} />
                         </span>
-                        {!isSidebarCollapsed ? (
+                        {!isNavigationCollapsed ? (
                           <span className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ${isActive ? "text-white" : "text-slate-600"}`}>{item.label}</span>
                         ) : null}
                       </span>
-                      {!isSidebarCollapsed ? (isOpen ? <ChevronDown size={20} strokeWidth={1.5} /> : <ChevronRight size={20} strokeWidth={1.5} />) : null}
+                      {!isNavigationCollapsed ? (isOpen ? <ChevronDown size={20} strokeWidth={1.5} /> : <ChevronRight size={20} strokeWidth={1.5} />) : null}
                     </button>
 
-                    {!isSidebarCollapsed && isOpen ? (
+                    {!isNavigationCollapsed && isOpen ? (
                       <div className="relative ml-5 mt-3 space-y-2 pl-7 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-black/8">
                         {visibleSections.map((section) => {
                           const isSectionOpen = openSections[item.key] === section.title;
@@ -248,6 +290,7 @@ export default function AdminLayout() {
                                         <NavLink
                                           key={child.to}
                                           to={child.to}
+                                          onClick={closeCompactSidebar}
                                           className={() =>
                                             `group relative flex items-center gap-2.5 rounded-[16px] px-3 py-1.5 text-[13px] transition ${
                                               isChildActive
@@ -281,18 +324,19 @@ export default function AdminLayout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  title={isSidebarCollapsed ? item.label : undefined}
+                  onClick={closeCompactSidebar}
+                  title={isNavigationCollapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center ${isSidebarCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${isActive ? "bg-[#111111] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"}`
+                    `flex items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${isActive ? "bg-[#111111] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"}`
                   }
                   style={{ fontSize: "12px", lineHeight: "1.2" }}
                 >
                   {({ isActive }) => (
-                    <span className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+                    <span className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
                       <span className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}>
                         <Icon size={16} />
                       </span>
-                      {!isSidebarCollapsed ? <span className={isActive ? "text-white" : "text-slate-600"}>{item.label}</span> : null}
+                      {!isNavigationCollapsed ? <span className={isActive ? "text-white" : "text-slate-600"}>{item.label}</span> : null}
                     </span>
                   )}
                 </NavLink>
@@ -300,12 +344,12 @@ export default function AdminLayout() {
             })}
           </nav>
 
-          <div className={`mt-8 rounded-[32px] bg-white/78 p-2 transition-all duration-300 ease-out ${isSidebarCollapsed ? "mx-auto w-fit" : ""}`}>
-            <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+          <div className={`mt-8 rounded-[32px] bg-white/78 p-2 transition-all duration-300 ease-out ${isNavigationCollapsed ? "mx-auto w-fit" : ""}`}>
+            <div className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
               <button type="button" onClick={logout} className="app-button app-button-dark app-icon-button shrink-0" aria-label="Log out">
                 <LogOut size={15} />
               </button>
-              {!isSidebarCollapsed ? (
+              {!isNavigationCollapsed ? (
                 <div className="min-w-0 flex-1 overflow-hidden transition-[max-width,opacity] duration-300 ease-out">
                   <p className="truncate text-sm font-semibold text-slate-900">{user?.full_name || "Workspace user"}</p>
                   <p className="truncate text-xs text-slate-500">{user?.email || "Session active"}</p>
@@ -315,13 +359,13 @@ export default function AdminLayout() {
           </div>
         </aside>
 
-        <main className="flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin-left] duration-300 ease-out xl:ml-[var(--sidebar-width)]">
-          <header className="app-glass top-0 z-20 flex flex-col gap-4 border-b border-slate-200/70 px-6 py-5 transition-[left] duration-300 ease-out lg:px-8 xl:fixed xl:left-[var(--sidebar-width)] xl:right-0 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-slate-950">Cyber GRC Workspace</h2>
+        <main className="ml-[var(--sidebar-offset)] flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin-left] duration-300 ease-out">
+          <header className="app-glass fixed left-[var(--sidebar-offset)] right-0 top-0 z-20 flex flex-row items-center justify-between gap-4 border-b border-slate-200/70 px-5 py-5 transition-[left] duration-300 ease-out lg:px-8">
+            <div className="min-w-0">
+              <h2 className="truncate text-[1.28rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.55rem]">Cyber GRC Workspace</h2>
             </div>
 
-            <div className="flex items-center gap-3 self-start xl:self-auto">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <div className="relative">
                 <button
                   type="button"
@@ -378,13 +422,13 @@ export default function AdminLayout() {
                 {!isSettingsRoute ? <span className="absolute right-3.5 top-3.5 h-1.5 w-1.5 rounded-full bg-[#fc8158]" aria-hidden="true" /> : null}
               </button>
 
-              <button type="button" onClick={handleQuickAdd} disabled={!quickAddTarget} className="app-button app-button-dark min-w-[128px]  disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={handleQuickAdd} disabled={!quickAddTarget} className="app-button app-button-dark hidden min-w-[128px] disabled:cursor-not-allowed disabled:opacity-50 sm:inline-flex">
                 Quick add
               </button>
             </div>
           </header>
 
-          <div className="flex-1 min-w-0 px-6 py-6 lg:px-8 xl:pt-[108px]">
+          <div className="min-w-0 flex-1 px-5 pb-6 pt-[106px] lg:px-8">
             <Outlet key={`${location.pathname}${location.search}`} />
           </div>
         </main>
@@ -392,5 +436,4 @@ export default function AdminLayout() {
     </div>
   );
 }
-
 
