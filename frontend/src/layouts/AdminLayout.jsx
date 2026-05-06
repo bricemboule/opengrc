@@ -178,7 +178,7 @@ export default function AdminLayout() {
       <div className="min-h-screen xl:block" style={{ "--sidebar-width": sidebarWidth }}>
         <aside className="app-glass flex min-h-screen flex-col border-r border-slate-200/70 px-5 py-6 transition-[width] duration-300 ease-out xl:fixed xl:inset-y-0 xl:left-0 xl:z-30 xl:h-screen xl:w-[var(--sidebar-width)]">
           <div className={`flex w-full items-center ${isSidebarCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}>
-            <BrandLogo title="OpenGRC" compact collapsed={isSidebarCollapsed} />
+            <BrandLogo title="National-3CPERS" compact collapsed={isSidebarCollapsed} />
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed((current) => !current)}
@@ -318,7 +318,7 @@ export default function AdminLayout() {
         <main className="flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin-left] duration-300 ease-out xl:ml-[var(--sidebar-width)]">
           <header className="app-glass top-0 z-20 flex flex-col gap-4 border-b border-slate-200/70 px-6 py-5 transition-[left] duration-300 ease-out lg:px-8 xl:fixed xl:left-[var(--sidebar-width)] xl:right-0 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-slate-950">Cyber GRC Workspace</h2>
+              <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-slate-950">Cyber National-3CPERS Workspace</h2>
             </div>
 
             <div className="flex items-center gap-3 self-start xl:self-auto">
@@ -392,5 +392,3 @@ export default function AdminLayout() {
     </div>
   );
 }
-
-
