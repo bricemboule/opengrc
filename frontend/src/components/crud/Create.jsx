@@ -149,7 +149,7 @@ export default function Create({ title, description, fields, values, errors, onC
     <section className="mb-6 space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex items-start gap-3.5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white/84 text-[#111111]">{editorialPresentation.icon || <span className="text-lg font-semibold">01</span>}</span>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white/84 text-[#091E37]">{editorialPresentation.icon || <span className="text-lg font-semibold">01</span>}</span>
 
           <div className="space-y-1">
             {editorialPresentation.eyebrow ? <span className="text-[12px] font-semibold text-black/42">{editorialPresentation.eyebrow}</span> : null}
@@ -173,7 +173,7 @@ export default function Create({ title, description, fields, values, errors, onC
           {/* <article className="rounded-[25px] bg-[#f0eded] px-6 py-6 sm:px-7"> */}
           <div className="mb-7 space-y-4">
             {/* <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-[#111111] px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-white">{modeLabel}</span>
+              <span className="rounded-full bg-[#091E37] px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-white">{modeLabel}</span>
               <span className="rounded-full bg-white/78 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-black/52">{fields.length} champs</span>
               {requiredCount ? <span className="rounded-full bg-white/78 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-black/52">{requiredCount} obligatoires</span> : null}
             </div> */}
@@ -238,7 +238,7 @@ export default function Create({ title, description, fields, values, errors, onC
             <div className="mt-4 space-y-3">
               {sections.map((section, index) => (
                 <div key={`${section.key}-summary`} className="flex items-start gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#111111] text-[11px] font-semibold text-white">{index + 1}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#091E37] text-[11px] font-semibold text-white">{index + 1}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-black">{section.title}</p>
                     <p className="mt-1 text-xs leading-5 text-black/46">{section.fields.length} fields in this section</p>

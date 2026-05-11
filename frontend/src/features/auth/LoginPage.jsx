@@ -67,10 +67,10 @@ export default function LoginPage() {
 
         <section className="flex items-center justify-center px-4 py-5 sm:px-8 lg:px-12">
           <div className="w-full max-w-[440px]">
-            <BrandLogo title="OpenGRC" compact />
+            <BrandLogo title="National-3CPERS" compact />
 
             <h1 className="mt-8 text-[2.2rem] font-semibold tracking-[-0.06em] text-slate-950">Welcome back</h1>
-            <p className="mt-3 max-w-md text-sm leading-7 text-[#5e5650]">Connect to the OpenGRC workspace to continue with your dashboards, workflows, and operational reviews.</p>
+            <p className="mt-3 max-w-md text-sm leading-7 text-[#5e5650]">Connect to the National-3CPERS workspace to continue with your dashboards, workflows, and operational reviews.</p>
 
             <div className="mt-8 border-b border-slate-200/70 pb-3 text-sm text-[#5e5650]">Account access</div>
 

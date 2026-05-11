@@ -202,7 +202,7 @@ def render_pdf_document(*, title, module_label, report_preset, document_type, su
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=18 * mm, bottomMargin=18 * mm)
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="MutedMeta", parent=styles["BodyText"], fontSize=9, leading=12, textColor=colors.HexColor("#555555")))
-    styles.add(ParagraphStyle(name="EntryHeading", parent=styles["Heading2"], fontSize=13, leading=16, textColor=colors.HexColor("#111111"), spaceAfter=6))
+    styles.add(ParagraphStyle(name="EntryHeading", parent=styles["Heading2"], fontSize=13, leading=16, textColor=colors.HexColor("#091E37"), spaceAfter=6))
     styles["Title"].fontSize = 22
     styles["Title"].leading = 26
 
@@ -227,7 +227,7 @@ def render_pdf_document(*, title, module_label, report_preset, document_type, su
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, -1), colors.white),
-                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#111111")),
+                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#091E37")),
                     ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
                     ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
                     ("FONTSIZE", (0, 0), (-1, -1), 9),

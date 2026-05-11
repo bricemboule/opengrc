@@ -5,10 +5,10 @@ import EmptyState from "./EmptyState";
 
 const LANE_TONES = [
   {
-    accent: "bg-black",
-    accentSoft: "bg-black/6",
-    badge: "bg-black text-white",
-    ring: "ring-black/14",
+    accent: "bg-[#091E37]",
+    accentSoft: "bg-[#091E37]/6",
+    badge: "bg-[#091E37] text-white",
+    ring: "ring-[#091E37]/14",
   },
   {
     accent: "bg-[#f0be7c]",
@@ -355,7 +355,7 @@ export default function WorkflowBoard({
                                   <h4 className="truncate text-[14px] font-semibold text-slate-950">{getTitle(row)}</h4>
                                   {contextLines.map((line) => (
                                     <div key={`${row.id}-${line}`} className="mt-1 flex items-start gap-2">
-                                      <span className="mt-[0.42rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#111111]" />
+                                      <span className="mt-[0.42rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[#091E37]" />
                                       <p className="min-w-0 truncate text-[11px] leading-5 text-[#554d46]">{line}</p>
                                     </div>
                                   ))}

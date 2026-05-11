@@ -4,7 +4,7 @@
   color-scheme: light;
   --app-ink: #191815;
   --app-muted: #6f6a63;
-  --app-black: #111111;
+  --app-black: #091E37;
   --app-peach: #ffd3b2;
   --app-mint: #93e1a4;
   --app-violet: #b8abff;
@@ -65,7 +65,7 @@ textarea::placeholder {
 }
 
 ::selection {
-  background: rgba(17, 17, 17, 0.14);
+  background: rgba(9, 30, 55, 0.14);
   color: var(--app-ink);
 }
 
@@ -124,7 +124,7 @@ textarea::placeholder {
 }
 
 .app-button-dark:hover {
-  background: #252320;
+  background: #0d2a4d;
 }
 
 .app-button-soft {
@@ -260,7 +260,7 @@ textarea::placeholder {
   line-height: 2.2rem;
   border: 0 !important;
   background: rgba(255, 255, 255, 0.92) !important;
-  color: #111111 !important;
+  color: #091E37 !important;
   font-weight: 500;
 }
 
@@ -279,7 +279,7 @@ textarea::placeholder {
 }
 
 .app-map-shell .leaflet-control-attribution a {
-  color: #111111 !important;
+  color: #091E37 !important;
 }
 
 .app-map-tooltip {
@@ -288,7 +288,7 @@ textarea::placeholder {
   border: 0 !important;
   border-radius: 0.75rem !important;
   background: rgba(255, 255, 255, 0.96) !important;
-  color: #111111 !important;
+  color: #091E37 !important;
   box-shadow: 0 16px 34px rgba(17, 17, 17, 0.08) !important;
 }
 

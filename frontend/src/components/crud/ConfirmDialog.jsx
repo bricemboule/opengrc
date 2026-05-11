@@ -21,7 +21,7 @@ export default function ConfirmDialog({
               <FiAlertTriangle size={18} />
             </span>
             <div>
-              <h2 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-[#111111]">{title}</h2>
+              <h2 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-[#091E37]">{title}</h2>
               {description ? <p className="mt-2 text-sm leading-6 text-black/56">{description}</p> : null}
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={loading}
             className="app-button app-button-dark"
-            style={{ paddingLeft: "1.4rem", paddingRight: "1.4rem", backgroundColor: "#111111" }}
+            style={{ paddingLeft: "1.4rem", paddingRight: "1.4rem", backgroundColor: "#091E37" }}
           >
             <FiTrash2 size={15} />
             {loading ? "Deleting..." : confirmLabel}

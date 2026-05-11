@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def send_email_notification(recipient, subject, body):
     try:
         send_mail(
-            subject or "OpenGRC notification",
+            subject or "National-3CPERS notification",
             body,
             getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@opengrc.local"),
             [recipient],

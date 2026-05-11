@@ -904,7 +904,7 @@ export default function OperationalReportView({
                   type="button"
                   onClick={onGenerateDocument}
                   disabled={isGeneratingDocument}
-                  className="inline-flex h-9 items-center rounded-full bg-[#111111] px-4 text-[11px] font-semibold text-white transition hover:bg-black/84 disabled:cursor-wait disabled:opacity-65"
+                  className="inline-flex h-9 items-center rounded-full bg-[#091E37] px-4 text-[11px] font-semibold text-white transition hover:bg-[#0d2a4d] disabled:cursor-wait disabled:opacity-65"
                 >
                   {isGeneratingDocument ? "Generating..." : `Generate ${String(documentFormat).toUpperCase()}`}
                 </button>

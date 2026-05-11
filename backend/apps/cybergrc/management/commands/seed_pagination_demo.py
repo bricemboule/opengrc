@@ -77,7 +77,7 @@ class Command(BaseCommand):
             return organization
 
         return Organization.objects.create(
-            name="OpenGRC Pagination Demo",
+            name="National-3CPERS Pagination Demo",
             code=DEMO_ORG_CODE,
             email="demo@opengrc.local",
             description="Demo organization for cyber GRC pagination testing.",

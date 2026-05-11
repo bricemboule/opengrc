@@ -208,26 +208,26 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
   return (
     <section className="app-surface rounded-[24px] px-6 py-6">
       <div className="border-b border-black/8 pb-4">
-        <h2 className="text-[1.55rem] font-semibold tracking-[-0.04em] text-[#111111]">{title}</h2>
+        <h2 className="text-[1.55rem] font-semibold tracking-[-0.04em] text-[#091E37]">{title}</h2>
         {description ? <p className="mt-1 text-sm leading-7 text-[#5e5650]">{description}</p> : null}
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <div className="min-w-[150px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Geolocated</p>
-          <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#111111]">{points.length}</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#091E37]">{points.length}</p>
         </div>
         <div className="min-w-[150px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Results</p>
-          <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#111111]">{rows.length}</p>
+          <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#091E37]">{rows.length}</p>
         </div>
         <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Focus</p>
-          <p className="mt-1 text-sm font-semibold text-[#111111]">{selectedPoint?.region || "Operational map"}</p>
+          <p className="mt-1 text-sm font-semibold text-[#091E37]">{selectedPoint?.region || "Operational map"}</p>
         </div>
         <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Spatial mode</p>
-          <p className="mt-1 text-sm font-semibold text-[#111111]">{spatialSummary?.engine?.postgis ? "PostGIS enabled" : "Lat/Lng analysis"}</p>
+          <p className="mt-1 text-sm font-semibold text-[#091E37]">{spatialSummary?.engine?.postgis ? "PostGIS enabled" : "Lat/Lng analysis"}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <MenuSelect
@@ -246,7 +246,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
           <button
             type="button"
             onClick={handleGeoJsonDownload}
-            className="inline-flex h-9 items-center gap-2 rounded-full bg-[#111111] px-4 text-[11px] font-semibold text-white transition hover:bg-black/84"
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-[#091E37] px-4 text-[11px] font-semibold text-white transition hover:bg-[#0d2a4d]"
           >
             <Download size={14} />
             GeoJSON
@@ -275,7 +275,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                         center={[point.latitude, point.longitude]}
                         radius={isSelected ? 10 : 7.5}
                         pathOptions={{
-                          color: isSelected ? "#111111" : "#ffffff",
+                          color: isSelected ? "#091E37" : "#ffffff",
                           weight: isSelected ? 2.2 : 1.6,
                           fillColor: pointColor,
                           fillOpacity: isSelected ? 0.96 : 0.84,
@@ -286,7 +286,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                       >
                         <Tooltip direction="top" offset={[0, -8]} opacity={1} className="app-map-tooltip">
                           <div>
-                            <p className="text-[12px] font-semibold text-[#111111]">{point.name}</p>
+                            <p className="text-[12px] font-semibold text-[#091E37]">{point.name}</p>
                             <p className="mt-1 text-[11px] text-[#5e5650]">{point.region}</p>
                           </div>
                         </Tooltip>
@@ -300,7 +300,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                 <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-wrap items-start justify-between gap-3">
                   <div className="pointer-events-auto w-full max-w-[360px] rounded-[14px] bg-white/82 px-4 py-3 backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
-                      <Crosshair size={14} className="text-[#111111]" />
+                      <Crosshair size={14} className="text-[#091E37]" />
                       Infrastructure footprint
                     </div>
                     <p className="mt-1 text-[11px] leading-5 text-[#5e5650]">Grab the map to pan, use the wheel to zoom, or select a point to inspect its operational context.</p>
@@ -308,7 +308,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
 
                   <div className="pointer-events-auto w-full min-w-[220px] max-w-[280px] rounded-[14px] bg-white/82 px-4 py-3 backdrop-blur-sm sm:w-auto">
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
-                      <Layers3 size={14} className="text-[#111111]" />
+                      <Layers3 size={14} className="text-[#091E37]" />
                       Coverage
                     </div>
                     <div className="mt-2 space-y-1.5">
@@ -316,7 +316,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                         sectorPreview.map(([sector, total]) => (
                           <div key={sector} className="flex items-center justify-between gap-4 text-[11px] text-[#5e5650]">
                             <span>{sector}</span>
-                            <span className="font-semibold text-[#111111]">{total}</span>
+                            <span className="font-semibold text-[#091E37]">{total}</span>
                           </div>
                         ))
                       ) : (
@@ -331,7 +331,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                     <div className="pointer-events-auto rounded-[16px] bg-white/90 px-4 py-4 shadow-[0_18px_40px_rgba(17,17,17,0.08)] backdrop-blur-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                          <p className="text-[13px] font-semibold text-[#111111]">{selectedPoint.name}</p>
+                          <p className="text-[13px] font-semibold text-[#091E37]">{selectedPoint.name}</p>
                           <p className="mt-1 text-[11px] leading-5 text-[#5e5650]">{selectedPoint.region}</p>
                       </div>
                       <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-medium ${getStatusTone(selectedPoint.status)}`}>{formatStatusLabel(selectedPoint.status)}</span>
@@ -339,10 +339,10 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                     <p className="mt-2 text-[11px] leading-5 text-[#5e5650]">{selectedPoint.detail}</p>
                     <div className="mt-3 rounded-[12px] bg-[#f8f4ee] px-3 py-2">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6c645d]">Nearby analysis</p>
-                      <p className="mt-1 text-[12px] font-semibold text-[#111111]">{nearbyCount} records within {analysisRadiusKm} km</p>
+                      <p className="mt-1 text-[12px] font-semibold text-[#091E37]">{nearbyCount} records within {analysisRadiusKm} km</p>
                     </div>
                     <div className="mt-3 flex items-center gap-2 text-[11px] text-[#6c645d]">
-                      <MapPin size={12} className="text-[#111111]" />
+                      <MapPin size={12} className="text-[#091E37]" />
                       {selectedPoint.latitude}, {selectedPoint.longitude}
                       </div>
                     </div>
@@ -352,8 +352,8 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
             ) : (
               <div className="absolute inset-0 flex items-center justify-center p-8">
                 <div className="max-w-sm rounded-[18px] bg-white/78 px-6 py-6 text-center shadow-[0_18px_40px_rgba(17,17,17,0.08)]">
-                  <MapPin size={20} className="mx-auto text-[#111111]" />
-                  <p className="mt-3 text-sm font-semibold text-[#111111]">No mapped records yet</p>
+                  <MapPin size={20} className="mx-auto text-[#091E37]" />
+                  <p className="mt-3 text-sm font-semibold text-[#091E37]">No mapped records yet</p>
                   <p className="mt-2 text-sm leading-6 text-[#5e5650]">This map will automatically populate once the infrastructure records carry coordinates.</p>
                 </div>
               </div>
@@ -378,7 +378,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                     className={`w-full rounded-[16px] px-4 py-4 text-left transition ${isSelected ? "bg-[#f0eded33] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.06)]" : "bg-white/82 hover:bg-[#f9f5ef]"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-sm font-semibold text-[#111111]">{point.name}</h4>
+                      <h4 className="text-sm font-semibold text-[#091E37]">{point.name}</h4>
                       <span className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-medium ${getStatusTone(point.status)}`}>{formatStatusLabel(point.status)}</span>
                     </div>
                     <p className="mt-2 text-[12px] font-medium text-[#554d46]">{point.region}</p>

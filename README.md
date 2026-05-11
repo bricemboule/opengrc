@@ -1,4 +1,4 @@
-# OpenGRC aligned with EDEN
+# National-3CPERS aligned with EDEN
 
 Application Django + React alignée sur les modules metier principaux de EDEN tout en conservant le design frontend existant.
 

@@ -23,7 +23,7 @@ function SettingsCard({ moduleConfig, description }) {
           <h2 className="text-[1rem] font-semibold text-slate-950">{moduleConfig.label}</h2>
           <p className="mt-1 text-sm leading-6 text-black/58">{description}</p>
         </div>
-        <Link to={buildModuleRoute(moduleConfig)} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] text-white transition hover:bg-black/88">
+        <Link to={buildModuleRoute(moduleConfig)} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#091E37] text-white transition hover:bg-[#0d2a4d]">
           <ArrowRight size={15} strokeWidth={2.3} className="text-white" />
         </Link>
       </div>
@@ -31,7 +31,7 @@ function SettingsCard({ moduleConfig, description }) {
       <div className="mt-4 flex flex-wrap gap-2.5">
         <Link
           to={buildModuleRoute(moduleConfig)}
-          className="text-[0.85rem] inline-flex items-center justify-center rounded-full bg-white/80 font-medium text-[#111111] shadow-[0_0px_10px_rgba(17,17,17,0.03)] transition hover:bg-[#faf8f5]"
+          className="text-[0.85rem] inline-flex items-center justify-center rounded-full bg-white/80 font-medium text-[#091E37] shadow-[0_0px_10px_rgba(17,17,17,0.03)] transition hover:bg-[#faf8f5]"
           style={{ paddingLeft: "2.15rem", paddingRight: "2.15rem", paddingTop: "0.58rem", paddingBottom: "0.58rem" }}
         >
           Open list
@@ -39,7 +39,7 @@ function SettingsCard({ moduleConfig, description }) {
         {createHref ? (
           <Link
             to={createHref}
-            className="text-[0.85rem] inline-flex items-center justify-center rounded-full bg-[#111111] font-medium text-white transition hover:bg-black/88"
+            className="text-[0.85rem] inline-flex items-center justify-center rounded-full bg-[#091E37] font-medium text-white transition hover:bg-[#0d2a4d]"
             style={{ paddingLeft: "2.15rem", paddingRight: "2.15rem", paddingTop: "0.58rem", paddingBottom: "0.58rem", color: "#ffffff" }}
           >
             Create
@@ -105,7 +105,7 @@ export default function SettingsPage() {
         title="Settings"
         description="This workspace groups the setup records that drive access control, institutions, sectors, and asset ownership across the platform."
         eyebrow={
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[#111111]">
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-[#091E37]">
             <Settings size={18} strokeWidth={2} />
           </div>
         }
@@ -116,7 +116,7 @@ export default function SettingsPage() {
           {sections.map((section) => (
             <section key={section.key} className="space-y-4 mt-12">
               <div className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/82 text-[#111111]">{section.icon}</span>
+                <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/82 text-[#091E37]">{section.icon}</span>
                 <div>
                   <h2 className="text-[1.15rem] font-semibold text-slate-950">{section.title}</h2>
                   <p className="mt-1 text-sm leading-6 text-black/56">{section.description}</p>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
       ) : (
         <section className="rounded-[18px] bg-white/74 px-5 py-6">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#111111]">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#091E37]">
               <Building2 size={18} strokeWidth={2} />
             </span>
             <div>

@@ -206,7 +206,7 @@ export default function AdminLayout() {
 
   const isSettingsRoute = location.pathname === "/settings";
   const isNavigationCollapsed = isCompactViewport ? !isCompactSidebarOpen : isSidebarCollapsed;
-  const sidebarWidth = isCompactViewport ? (isCompactSidebarOpen ? "min(290px, calc(100vw - 24px))" : "84px") : isSidebarCollapsed ? "96px" : "290px";
+  const sidebarWidth = isCompactViewport ? (isCompactSidebarOpen ? "min(330px, calc(100vw - 24px))" : "84px") : isSidebarCollapsed ? "96px" : "330px";
   const sidebarOffset = isCompactViewport ? "84px" : sidebarWidth;
 
   return (
@@ -220,11 +220,11 @@ export default function AdminLayout() {
           }`}
         >
           <div className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}>
-            <BrandLogo title="OpenGRC" compact collapsed={isNavigationCollapsed} />
+            <BrandLogo title="National-3CPERS" compact collapsed={isNavigationCollapsed} />
             <button
               type="button"
               onClick={toggleSidebar}
-              className={`${isNavigationCollapsed ? "" : "ml-auto"} flex h-10 w-10 items-center justify-center rounded-full text-[#5e5650]/55 transition hover:bg-white/66 hover:text-[#111111] active:text-[#111111]`}
+              className={`${isNavigationCollapsed ? "" : "ml-auto"} flex h-10 w-10 items-center justify-center rounded-full text-[#5e5650]/55 transition hover:bg-white/66 hover:text-[#091E37] active:text-[#091E37]`}
               aria-label={isNavigationCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isNavigationCollapsed ? <PanelLeftOpen size={18} strokeWidth={1.8} /> : <PanelLeftClose size={18} strokeWidth={1.8} />}
@@ -246,7 +246,7 @@ export default function AdminLayout() {
                       onClick={() => toggleDropdown(item.key)}
                       title={isNavigationCollapsed ? item.label : undefined}
                       className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "justify-between gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${
-                        isActive ? "bg-[#111111] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"
+                        isActive ? "bg-[#091E37] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"
                       }`}
                       style={{ fontSize: "12px", lineHeight: "1.2" }}
                     >
@@ -299,7 +299,7 @@ export default function AdminLayout() {
                                             }`
                                           }
                                         >
-                                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isChildActive ? "bg-[#111111]" : "bg-black/12 group-hover:bg-black/30"}`} />
+                                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isChildActive ? "bg-[#091E37]" : "bg-black/12 group-hover:bg-black/30"}`} />
                                           <span className={`text-[13px] ${isChildActive ? "text-slate-900" : "text-slate-400"}`}>{renderActionIcon(child.label)}</span>
                                           <span>{child.label}</span>
                                         </NavLink>
@@ -327,7 +327,7 @@ export default function AdminLayout() {
                   onClick={closeCompactSidebar}
                   title={isNavigationCollapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${isActive ? "bg-[#111111] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"}`
+                    `flex items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${isActive ? "bg-[#091E37] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"}`
                   }
                   style={{ fontSize: "12px", lineHeight: "1.2" }}
                 >
@@ -436,4 +436,3 @@ export default function AdminLayout() {
     </div>
   );
 }
-
