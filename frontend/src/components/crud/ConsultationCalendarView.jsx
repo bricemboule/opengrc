@@ -360,7 +360,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
                     {day.count ? (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {Array.from({ length: Math.min(day.count, 3) }).map((_, index) => (
-                          <span key={`${day.dayKey}-${index}`} className="h-1.5 w-1.5 rounded-full bg-[#111111]" />
+                          <span key={`${day.dayKey}-${index}`} className="h-1.5 w-1.5 rounded-full bg-[#091E37]" />
                         ))}
                         {day.count > 3 ? <span className="text-[10px] font-medium text-black/42">+{day.count - 3}</span> : null}
                       </div>
@@ -389,7 +389,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
               groupedItems.map((group) => (
                 <section key={group.key} className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#111111]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#091E37]" />
                     <h4 className="text-[0.95rem] font-semibold text-black">{group.label}</h4>
                   </div>
 

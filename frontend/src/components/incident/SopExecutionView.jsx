@@ -170,7 +170,7 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
                   <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
                   <p className="mt-2 text-[1.55rem] font-semibold tracking-[-0.05em] text-slate-950">{item.value}</p>
                 </div>
-                <span className={`h-3 w-3 rounded-full ${["bg-black", "bg-[#d67863]", "bg-[#f0be7c]", "bg-[#93e1a4]"][index % 4]}`} />
+                <span className={`h-3 w-3 rounded-full ${["bg-[#091E37]", "bg-[#d67863]", "bg-[#f0be7c]", "bg-[#93e1a4]"][index % 4]}`} />
               </div>
               <p className="mt-2 text-xs leading-6 text-slate-500">{item.helper}</p>
             </article>
@@ -371,7 +371,7 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
                             href={step.evidence_reference}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-3 inline-flex items-center gap-2 text-[11px] font-medium text-[#111111] underline underline-offset-4"
+                            className="mt-3 inline-flex items-center gap-2 text-[11px] font-medium text-[#091E37] underline underline-offset-4"
                           >
                             <FileText size={12} />
                             Open evidence

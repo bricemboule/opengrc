@@ -187,7 +187,7 @@ class Command(BaseCommand):
         rows,
         record_id=None,
         record_title="",
-        generated_by_name="OpenGRC Demo Seeder",
+        generated_by_name="National-3CPERS Demo Seeder",
     ):
         payload = build_document_payload(
             title=title,

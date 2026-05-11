@@ -101,7 +101,7 @@ export default function Pagination({
                       aria-selected={isActive}
                       onClick={() => handlePageSizeSelect(option)}
                       className={`flex w-full items-center justify-between rounded-[8px] px-3 py-2 text-sm font-semibold transition ${
-                        isActive ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                        isActive ? "bg-[#091E37] text-white" : "text-black hover:bg-black/[0.05]"
                       }`}
                     >
                       <span>{option}</span>

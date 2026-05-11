@@ -502,7 +502,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
           label: "Name",
           render: (row) => (
             <div className="flex items-center gap-2.5">
-              <Folder size={16} strokeWidth={1.7} className="shrink-0 text-[#111111]" />
+              <Folder size={16} strokeWidth={1.7} className="shrink-0 text-[#091E37]" />
               <span className="text-[13px] font-medium text-[#222028]">{row.name || "—"}</span>
             </div>
           ),
@@ -833,7 +833,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                         {config.key === "generated_documents" ? (
                           <button
                             onClick={() => handleDownloadGeneratedDocument(row)}
-                            className="flex h-9 w-9 items-center justify-center text-[#111111] transition hover:text-black/70"
+                            className="flex h-9 w-9 items-center justify-center text-[#091E37] transition hover:text-black/70"
                             aria-label={`Download ${row.title || config.label}`}
                           >
                             <Download size={14} strokeWidth={2} />
@@ -844,7 +844,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                             setEditingItem(row);
                             setFormErrors({});
                           }}
-                          className="flex h-9 w-9 items-center justify-center text-[#111111] transition hover:text-black/70"
+                          className="flex h-9 w-9 items-center justify-center text-[#091E37] transition hover:text-black/70"
                           aria-label={`Edit ${row.name || config.label}`}
                         >
                           <FiEdit2 size={14} />
@@ -920,7 +920,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                     <button
                       type="button"
                       onClick={() => handleDownloadGeneratedDocument(row)}
-                      className="inline-flex h-8 items-center gap-1 rounded-full bg-[#111111] px-3.5 text-[11px] font-semibold text-white transition hover:bg-black/84"
+                      className="inline-flex h-8 items-center gap-1 rounded-full bg-[#091E37] px-3.5 text-[11px] font-semibold text-white transition hover:bg-[#0d2a4d]"
                     >
                       <Download size={12} strokeWidth={2} />
                       Download
@@ -931,7 +931,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                         setEditingItem(row);
                         setFormErrors({});
                       }}
-                      className="inline-flex h-8 items-center rounded-full bg-[#f3efe8] px-3.5 text-[11px] font-semibold text-[#111111] transition hover:bg-[#ece6dc]"
+                      className="inline-flex h-8 items-center rounded-full bg-[#f3efe8] px-3.5 text-[11px] font-semibold text-[#091E37] transition hover:bg-[#ece6dc]"
                     >
                       Open
                     </button>

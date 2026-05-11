@@ -213,7 +213,7 @@ function SelectionControl({ checked = false, mixed = false, onToggle, label }) {
       aria-label={label}
       onClick={onToggle}
       className={`flex h-5 w-5 items-center justify-center rounded-[7px] transition ${
-        checked || mixed ? "bg-[#111111] text-white" : "border border-black/8 bg-transparent text-transparent hover:border-black/14 hover:bg-white/40"
+        checked || mixed ? "bg-[#091E37] text-white" : "border border-black/8 bg-transparent text-transparent hover:border-black/14 hover:bg-white/40"
       }`}
     >
       {mixed ? <Minus size={11} strokeWidth={1.9} /> : checked ? <Check size={11} strokeWidth={1.9} /> : null}
@@ -240,9 +240,9 @@ export default function DataTable({ columns, rows = [], rowActions, variant = "d
       ? "w-max min-w-full border-separate border-spacing-y-[0.12rem] text-[13px]"
       : "w-full min-w-[760px] border-separate border-spacing-y-[0.16rem] text-[14px]";
   const tableStyle = { fontFamily: "var(--app-table-font)" };
-  const headerRowClassName = "text-left text-[13px] tracking-[0.01em] text-[#111111]";
+  const headerRowClassName = "text-left text-[13px] tracking-[0.01em] text-[#091E37]";
   const headerCellBaseClassName = isReportVariant ? "bg-[#f0eded] px-3.5 py-[14px] font-semibold" : "bg-[#f0eded] px-4 py-[18px] font-semibold";
-  const bodyRowClassName = "text-[#111111]";
+  const bodyRowClassName = "text-[#091E37]";
   const bodyCellBaseClassName = isReportVariant ? "px-3.5 py-3 align-middle" : "px-4 py-3.5 align-middle";
   const headerRadiusClassName = isReportVariant ? "rounded-[8px]" : "rounded-[14px]";
 

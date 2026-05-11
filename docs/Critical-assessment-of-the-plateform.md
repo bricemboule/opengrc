@@ -1,6 +1,6 @@
 Oui — j’ai refait l’analyse plus soigneusement, et je corrige mon appréciation précédente sur un point important :
 
-**la base OpenGRC est plus avancée que ce que j’avais laissé entendre sur la partie “gouvernance / registre / suivi opérationnel”.**
+**la base National-3CPERS est plus avancée que ce que j’avais laissé entendre sur la partie “gouvernance / registre / suivi opérationnel”.**
 En revanche, **elle ne couvre toujours pas entièrement le niveau de profondeur institutionnelle et opérationnelle demandé par le ToR**. Le ToR ne demande pas seulement des formulaires CRUD ; il demande aussi un cadre national de gouvernance, un registre de risques exploitable par les CII, une cartographie CII avec sorties GIS, des plans de contingence, des mécanismes de partage d’information, des outils digitaux d’aide à la décision, des simulations, des standards ISP/banque, et un cadre d’audit et de révision continue.
 
 ## Ma conclusion révisée

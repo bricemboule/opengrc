@@ -4,7 +4,7 @@ export default function DataToolbar({ search, setSearch, onRefresh, action, plac
   return (
     <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div className="relative w-full xl:max-w-md">
-        <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[#111111]">
+        <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[#091E37]">
           <FiSearch size={15} />
         </span>
         <input

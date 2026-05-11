@@ -368,7 +368,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
             <span
               aria-hidden="true"
               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[7px] transition ${
-                checked ? "bg-[#111111] text-white" : "border border-black/8 bg-transparent text-transparent hover:border-black/14 hover:bg-white/40"
+                checked ? "bg-[#091E37] text-white" : "border border-black/8 bg-transparent text-transparent hover:border-black/14 hover:bg-white/40"
               }`}
             >
               {checked ? <Check size={11} strokeWidth={1.9} /> : null}
@@ -382,7 +382,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
 
     return (
       <label className={`ml-3 flex items-center gap-3 rounded-[99px] bg-white/74 px-4 py-4 ${isWide ? "md:col-span-2" : ""}`}>
-        <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(field.name, event.target.checked)} className="h-4 w-4 rounded accent-[#111111]" />
+        <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(field.name, event.target.checked)} className="h-4 w-4 rounded accent-[#091E37]" />
         <span className="text-sm text-slate-700">{label}</span>
       </label>
     );
@@ -465,7 +465,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                           setIsSelectOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
-                          isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                          isSelected ? "bg-[#091E37] text-white" : "text-black hover:bg-black/[0.05]"
                         }`}
                       >
                         <span>{getChoiceText(choice)}</span>
@@ -583,7 +583,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                           setIsSelectOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
-                          isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                          isSelected ? "bg-[#091E37] text-white" : "text-black hover:bg-black/[0.05]"
                         }`}
                       >
                         <span>{getChoiceText(choice)}</span>
@@ -621,7 +621,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => onChange(field.name, toggleArrayValue(value, choice.value))}
-                  className="h-4 w-4 rounded accent-[#111111]"
+                  className="h-4 w-4 rounded accent-[#091E37]"
                 />
               </label>
             );
@@ -739,7 +739,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                         onClick={() => selectDateFromPicker(day.value)}
                         className={`aspect-square rounded-full text-[0.76rem] font-medium transition ${
                           day.isSelected
-                            ? "bg-[#111111] text-white"
+                            ? "bg-[#091E37] text-white"
                             : day.isToday
                               ? "shadow-[inset_0_0_0_1px_rgba(17,17,17,0.14)] text-black"
                               : day.inCurrentMonth
@@ -794,7 +794,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                                   setIsTimePickerOpen(false);
                                 }}
                                 className={`flex w-full items-center justify-between rounded-[14px] px-3 py-2.5 text-sm font-medium transition ${
-                                  isSelected ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                                  isSelected ? "bg-[#091E37] text-white" : "text-black hover:bg-black/[0.05]"
                                 }`}
                               >
                                 <span>{timeOption}</span>

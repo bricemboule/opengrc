@@ -47,7 +47,7 @@ def send_notification_email(notification, subject=None):
 
     try:
         send_mail(
-            subject or notification.title or "OpenGRC notification",
+            subject or notification.title or "National-3CPERS notification",
             notification.message,
             getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@opengrc.local"),
             [recipient_email],
@@ -89,7 +89,7 @@ def dispatch_notification(message, organization=None, title="", source="system",
         emailed_at = None
 
         if send_email:
-            email_status, email_error = send_notification_email(notification, subject=title or "OpenGRC notification")
+            email_status, email_error = send_notification_email(notification, subject=title or "National-3CPERS notification")
             if email_status == Notification.EmailStatus.SENT:
                 emailed_at = timezone.now()
 

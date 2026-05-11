@@ -61,7 +61,7 @@ export default function MenuSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
-        className={`inline-flex h-9 items-center justify-between gap-3 rounded-[10px] border border-black/10 bg-white px-3 text-[11px] font-semibold text-[#111111] transition hover:border-black/20 ${triggerClassName}`.trim()}
+        className={`inline-flex h-9 items-center justify-between gap-3 rounded-[10px] border border-black/10 bg-white px-3 text-[11px] font-semibold text-[#091E37] transition hover:border-black/20 ${triggerClassName}`.trim()}
       >
         <span>{selectedOption?.label ?? ""}</span>
         <ChevronDown size={15} className={`text-black/70 transition ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -87,7 +87,7 @@ export default function MenuSelect({
                   setIsOpen(false);
                 }}
                 className={`flex w-full items-center justify-between rounded-[8px] px-3 py-2 text-sm font-semibold transition ${
-                  isActive ? "bg-[#111111] text-white" : "text-black hover:bg-black/[0.05]"
+                  isActive ? "bg-[#091E37] text-white" : "text-black hover:bg-black/[0.05]"
                 } ${optionClassName}`.trim()}
               >
                 <span>{option.label}</span>
