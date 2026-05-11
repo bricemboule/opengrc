@@ -74,6 +74,12 @@ const STANDARD_PAGE_SIZE = 20;
 const RELATION_OPTION_PAGE_SIZE = 200;
 const RELATION_OPTION_MAX_PAGES = 5;
 const SETTINGS_ONLY_FORM_MODULE_KEYS = new Set(["users", "roles", "sectors", "organizations", "organization_types", "asset_types", "assets"]);
+const INFRASTRUCTURE_DEPENDENT_FIELDS = {
+  asset_item: "related_infrastructure",
+  related_threat_event: "related_infrastructure",
+  vulnerability_record: "related_infrastructure",
+  risk_register_entry: "infrastructure",
+};
 
 function getExtendedPageSize(activeMode, pageSize) {
   const baseline = ["workflow", "calendar"].includes(activeMode) ? 80 : 60;
@@ -84,6 +90,13 @@ function resolveRelationOptionLabel(item, labelField) {
   if (labelField && item?.[labelField]) return item[labelField];
 
   return item?.name || item?.title || item?.code || item?.label || (item?.id ? `#${item.id}` : "");
+}
+
+function getRelationIdentity(item, fieldName) {
+  if (!item || !fieldName) return null;
+  const value = item[fieldName] ?? item[`${fieldName}_id`];
+  if (value && typeof value === "object") return value.id ?? value.value ?? null;
+  return value ?? null;
 }
 
 async function fetchRelationChoices(relation) {
@@ -108,6 +121,8 @@ async function fetchRelationChoices(relation) {
         .map((item) => ({
           value: item.id,
           display_name: resolveRelationOptionLabel(item, relation.labelField),
+          related_infrastructure: getRelationIdentity(item, "related_infrastructure"),
+          infrastructure: getRelationIdentity(item, "infrastructure"),
         })),
     );
 
@@ -214,6 +229,33 @@ function getQueryErrorMessage(error, fallback = "An error occurred while loading
 function extractFilenameFromDisposition(disposition) {
   const match = String(disposition || "").match(/filename=\"?([^\";]+)\"?/i);
   return match?.[1] || "";
+}
+
+function downloadBlobResponse(response, fallbackFilename) {
+  const filename = extractFilenameFromDisposition(response.headers?.["content-disposition"]) || fallbackFilename;
+  const objectUrl = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
+function buildGeneratedDocumentFilename(row) {
+  const extension =
+    row?.output_format === "pdf"
+      ? "pdf"
+      : row?.output_format === "docx"
+        ? "docx"
+        : row?.output_format === "json"
+          ? "json"
+          : row?.output_format === "markdown"
+            ? "md"
+            : "txt";
+
+  return `${String(row?.title || "generated_document").replace(/\s+/g, "_")}.${extension}`;
 }
 
 function getModePresentation(config, activeMode) {
@@ -368,27 +410,34 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
     const relationStates = new Map(
       relationFields.map((field, index) => [field.name, relationQueries[index] || {}]),
     );
+    const selectedInfrastructureId = formValues.related_infrastructure || formValues.infrastructure;
 
     return baseFormFields.map((field) => {
       if (!field.relation?.endpoint) return field;
 
       const relationState = relationStates.get(field.name) || {};
+      const dependencyRelationName = INFRASTRUCTURE_DEPENDENT_FIELDS[field.name];
+      const relationChoices = dependencyRelationName && selectedInfrastructureId
+        ? (relationState.data || []).filter((choice) => String(choice[dependencyRelationName] || "") === String(selectedInfrastructureId))
+        : relationState.data || [];
       const relationPlaceholder = relationState.isLoading
         ? `Loading ${String(field.label || field.name || "options").toLowerCase()}...`
         : relationState.isError
           ? `Unable to load ${String(field.label || field.name || "options").toLowerCase()}`
-          : field.placeholder;
+          : dependencyRelationName && selectedInfrastructureId && !relationChoices.length
+            ? "No matching records for the selected infrastructure"
+            : field.placeholder;
 
       return {
         ...field,
         type: field.type === "multirelation" ? "multirelation" : "relation",
-        choices: relationState.data || [],
+        choices: relationChoices,
         placeholder: relationPlaceholder,
         relationLoading: Boolean(relationState.isLoading),
         relationError: Boolean(relationState.isError),
       };
     });
-  }, [baseFormFields, relationFields, relationQueries]);
+  }, [baseFormFields, formValues.infrastructure, formValues.related_infrastructure, relationFields, relationQueries]);
   const modePresentation = useMemo(() => getModePresentation(config, activeMode), [activeMode, config]);
   const SectionHeaderIcon = useMemo(() => getModuleSectionIcon(config?.key), [config?.key]);
   const baseFormPresentation = useMemo(() => getFormPresentation(config), [config]);
@@ -529,6 +578,24 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
   }, [editingItem, formFieldSignature]);
 
   useEffect(() => {
+    setFormValues((currentValues) => {
+      let nextValues = currentValues;
+
+      formFields.forEach((field) => {
+        if (!INFRASTRUCTURE_DEPENDENT_FIELDS[field.name] || !currentValues[field.name] || field.relationLoading || field.relationError) return;
+        const hasSelectedChoice = (field.choices || []).some((choice) => String(choice.value) === String(currentValues[field.name]));
+
+        if (!hasSelectedChoice) {
+          nextValues = nextValues === currentValues ? { ...currentValues } : nextValues;
+          nextValues[field.name] = "";
+        }
+      });
+
+      return nextValues;
+    });
+  }, [formFields]);
+
+  useEffect(() => {
     setEditingItem(null);
     setFormErrors({});
     setSearch("");
@@ -640,8 +707,14 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
         columns: displayColumns.map((column) => ({ key: column.key, label: column.label })),
         search,
       });
+      if (response.data?.id) {
+        const downloadResponse = await api.get(`/cybergrc/generated-documents/${response.data.id}/download/`, {
+          responseType: "blob",
+        });
+        downloadBlobResponse(downloadResponse, buildGeneratedDocumentFilename(response.data));
+      }
       await queryClient.invalidateQueries({ queryKey: ["generated_documents"] });
-      notifySuccess(`Document generated in ${documentFormat.toUpperCase()}: ${response.data?.title || `${config.label} report`}`);
+      notifySuccess(`Document generated and downloaded in ${documentFormat.toUpperCase()}: ${response.data?.title || `${config.label} report`}`);
     } catch (error) {
       notifyError(getQueryErrorMessage(error, "Unable to generate the report document."));
     } finally {
@@ -656,17 +729,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
       const response = await api.get(`/cybergrc/generated-documents/${row.id}/download/`, {
         responseType: "blob",
       });
-      const filename =
-        extractFilenameFromDisposition(response.headers?.["content-disposition"]) ||
-        `${String(row.title || "generated_document").replace(/\s+/g, "_")}.${row.output_format === "pdf" ? "pdf" : row.output_format === "docx" ? "docx" : row.output_format === "json" ? "json" : row.output_format === "markdown" ? "md" : "txt"}`;
-      const objectUrl = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(objectUrl);
+      downloadBlobResponse(response, buildGeneratedDocumentFilename(row));
     } catch (error) {
       notifyError(getQueryErrorMessage(error, "Unable to download this document."));
     }

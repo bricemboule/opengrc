@@ -179,6 +179,7 @@ export function buildFieldList(config, metadata) {
 
   return [...allNames, ...remaining]
     .filter((name, index, array) => array.indexOf(name) === index)
+    .filter((name) => name !== "organization" || preferred.includes(name))
     .map((name) => ({
       ...buildFallbackField(name, configuredDefinitions.get(name)),
       ...(postFields[name] || {}),

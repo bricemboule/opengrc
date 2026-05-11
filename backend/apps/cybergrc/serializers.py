@@ -140,6 +140,7 @@ class StakeholderSerializer(AuditFieldsSerializerMixin):
 
 class CriticalInfrastructureSerializer(AuditFieldsSerializerMixin):
     owner_stakeholder_name = serializers.CharField(source="owner_stakeholder.name", read_only=True)
+    sector = serializers.CharField(required=False, allow_blank=True)
     sector_name = serializers.SerializerMethodField()
 
     class Meta:
