@@ -1,6 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
-import { FiActivity, FiBarChart2, FiBell, FiCalendar, FiCheckSquare, FiClipboard, FiFileText, FiFolderPlus, FiGrid, FiList, FiMap, FiSearch, FiUpload, FiX } from "react-icons/fi";
+import {
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+} from "lucide-react";
+import {
+  FiActivity,
+  FiBarChart2,
+  FiBell,
+  FiCalendar,
+  FiCheckSquare,
+  FiClipboard,
+  FiFileText,
+  FiFolderPlus,
+  FiGrid,
+  FiList,
+  FiMap,
+  FiSearch,
+  FiUpload,
+  FiX,
+} from "react-icons/fi";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearAuth } from "../features/auth/authSlice";
@@ -23,13 +45,18 @@ function getTargetMode(to) {
 
 function childIsActive(location, to) {
   const pathname = to.split("?")[0];
-  return location.pathname === pathname && getLocationMode(location) === getTargetMode(to);
+  return (
+    location.pathname === pathname &&
+    getLocationMode(location) === getTargetMode(to)
+  );
 }
 
 function buildOpenState(menuItems, location) {
   return menuItems.reduce((accumulator, item) => {
     if (item.type === "dropdown") {
-      accumulator[item.key] = item.sections.some((section) => section.items.some((child) => childIsActive(location, child.to)));
+      accumulator[item.key] = item.sections.some((section) =>
+        section.items.some((child) => childIsActive(location, child.to)),
+      );
     }
     return accumulator;
   }, {});
@@ -38,7 +65,9 @@ function buildOpenState(menuItems, location) {
 function buildSectionOpenState(menuItems, location) {
   return menuItems.reduce((accumulator, item) => {
     if (item.type === "dropdown") {
-      const activeSection = item.sections.find((section) => section.items.some((child) => childIsActive(location, child.to)));
+      const activeSection = item.sections.find((section) =>
+        section.items.some((child) => childIsActive(location, child.to)),
+      );
       accumulator[item.key] = activeSection?.title || null;
     }
     return accumulator;
@@ -64,14 +93,20 @@ export default function AdminLayout() {
     () =>
       menuItems.reduce((accumulator, item) => {
         if (item.type === "dropdown") {
-          accumulator[item.key] = item.sections.some((section) => section.items.some((child) => childIsActive(location, child.to)));
+          accumulator[item.key] = item.sections.some((section) =>
+            section.items.some((child) => childIsActive(location, child.to)),
+          );
         }
         return accumulator;
       }, {}),
     [location, menuItems],
   );
-  const [openDropdowns, setOpenDropdowns] = useState(() => buildOpenState(menuItems, location));
-  const [openSections, setOpenSections] = useState(() => buildSectionOpenState(menuItems, location));
+  const [openDropdowns, setOpenDropdowns] = useState(() =>
+    buildOpenState(menuItems, location),
+  );
+  const [openSections, setOpenSections] = useState(() =>
+    buildSectionOpenState(menuItems, location),
+  );
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -85,7 +120,10 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem("opengrc-sidebar-collapsed", String(isSidebarCollapsed));
+    window.localStorage.setItem(
+      "opengrc-sidebar-collapsed",
+      String(isSidebarCollapsed),
+    );
   }, [isSidebarCollapsed]);
 
   useEffect(() => {
@@ -124,8 +162,11 @@ export default function AdminLayout() {
       menuItems.reduce(
         (accumulator, item) => {
           if (item.type !== "dropdown") return accumulator;
-          const activeSection = item.sections.find((section) => section.items.some((child) => childIsActive(location, child.to)));
-          accumulator[item.key] = activeSection?.title || current[item.key] || null;
+          const activeSection = item.sections.find((section) =>
+            section.items.some((child) => childIsActive(location, child.to)),
+          );
+          accumulator[item.key] =
+            activeSection?.title || current[item.key] || null;
           return accumulator;
         },
         { ...current },
@@ -135,19 +176,35 @@ export default function AdminLayout() {
 
   const filteredMenu = menuItems.filter((item) => {
     if (item.type === "dropdown") {
-      return item.sections.some((section) => !section.permission || permissions.includes(section.permission));
+      return item.sections.some(
+        (section) =>
+          !section.permission || permissions.includes(section.permission),
+      );
     }
     return !item.permission || permissions.includes(item.permission);
   });
-  const currentModuleConfig = useMemo(() => moduleConfigs.find((item) => location.pathname.startsWith(`/modules/${item.route}`)) || null, [location.pathname]);
+  const currentModuleConfig = useMemo(
+    () =>
+      moduleConfigs.find((item) =>
+        location.pathname.startsWith(`/modules/${item.route}`),
+      ) || null,
+    [location.pathname],
+  );
   const quickAddTarget = useMemo(() => {
     const getCreateRoute = (config) => {
       if (!config) return null;
-      if (config.permission && !permissions.includes(config.permission)) return null;
-      return getSupportedViews(config).includes("create") ? `/modules/${config.route}?mode=create` : null;
+      if (config.permission && !permissions.includes(config.permission))
+        return null;
+      return getSupportedViews(config).includes("create")
+        ? `/modules/${config.route}?mode=create`
+        : null;
     };
 
-    return getCreateRoute(currentModuleConfig) || moduleConfigs.map(getCreateRoute).find(Boolean) || null;
+    return (
+      getCreateRoute(currentModuleConfig) ||
+      moduleConfigs.map(getCreateRoute).find(Boolean) ||
+      null
+    );
   }, [currentModuleConfig, permissions]);
 
   function logout() {
@@ -160,9 +217,11 @@ export default function AdminLayout() {
     if (normalized === "create") return <FiFolderPlus size={14} />;
     if (normalized.includes("import")) return <FiUpload size={14} />;
     if (normalized.includes("calendar")) return <FiCalendar size={14} />;
-    if (normalized.includes("workflow") || normalized.includes("board")) return <FiActivity size={14} />;
+    if (normalized.includes("workflow") || normalized.includes("board"))
+      return <FiActivity size={14} />;
     if (normalized.includes("report")) return <FiBarChart2 size={14} />;
-    if (normalized.includes("gis") || normalized.includes("map")) return <FiMap size={14} />;
+    if (normalized.includes("gis") || normalized.includes("map"))
+      return <FiMap size={14} />;
     if (normalized.includes("search")) return <FiSearch size={14} />;
     if (normalized.includes("checklist")) return <FiCheckSquare size={14} />;
     if (normalized.includes("review")) return <FiClipboard size={14} />;
@@ -178,7 +237,8 @@ export default function AdminLayout() {
   function toggleSection(dropdownKey, sectionTitle) {
     setOpenSections((current) => ({
       ...current,
-      [dropdownKey]: current[dropdownKey] === sectionTitle ? null : sectionTitle,
+      [dropdownKey]:
+        current[dropdownKey] === sectionTitle ? null : sectionTitle,
     }));
   }
 
@@ -205,29 +265,64 @@ export default function AdminLayout() {
   }
 
   const isSettingsRoute = location.pathname === "/settings";
-  const isNavigationCollapsed = isCompactViewport ? !isCompactSidebarOpen : isSidebarCollapsed;
-  const sidebarWidth = isCompactViewport ? (isCompactSidebarOpen ? "min(330px, calc(100vw - 24px))" : "84px") : isSidebarCollapsed ? "96px" : "330px";
+  const isNavigationCollapsed = isCompactViewport
+    ? !isCompactSidebarOpen
+    : isSidebarCollapsed;
+  const sidebarWidth = isCompactViewport
+    ? isCompactSidebarOpen
+      ? "min(330px, calc(100vw - 24px))"
+      : "84px"
+    : isSidebarCollapsed
+      ? "96px"
+      : "330px";
   const sidebarOffset = isCompactViewport ? "84px" : sidebarWidth;
 
   return (
     <div className="min-h-screen">
-      <div className="min-h-screen" style={{ "--sidebar-width": sidebarWidth, "--sidebar-offset": sidebarOffset }}>
-        {isCompactViewport && isCompactSidebarOpen ? <button type="button" aria-label="Close sidebar" onClick={() => setIsCompactSidebarOpen(false)} className="fixed inset-0 z-20 bg-black/10 backdrop-blur-[2px]" /> : null}
+      <div
+        className="min-h-screen"
+        style={{
+          "--sidebar-width": sidebarWidth,
+          "--sidebar-offset": sidebarOffset,
+        }}
+      >
+        {isCompactViewport && isCompactSidebarOpen ? (
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            onClick={() => setIsCompactSidebarOpen(false)}
+            className="fixed inset-0 z-20 bg-black/10 backdrop-blur-[2px]"
+          />
+        ) : null}
 
         <aside
           className={`app-glass fixed inset-y-0 left-0 z-30 flex h-screen min-h-screen w-[var(--sidebar-width)] flex-col border-r border-slate-200/70 px-5 py-6 transition-[width,box-shadow] duration-300 ease-out ${
-            isCompactViewport && isCompactSidebarOpen ? "shadow-[18px_0_54px_rgba(17,17,17,0.12)]" : ""
+            isCompactViewport && isCompactSidebarOpen
+              ? "shadow-[18px_0_54px_rgba(17,17,17,0.12)]"
+              : ""
           }`}
         >
-          <div className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}>
-            <BrandLogo title="National-3CPERS" compact collapsed={isNavigationCollapsed} />
+          <div
+            className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center gap-2 px-0" : "justify-between pl-2 pr-0"} transition-all duration-300 ease-out`}
+          >
+            <BrandLogo
+              title="National-3CPERS"
+              compact
+              collapsed={isNavigationCollapsed}
+            />
             <button
               type="button"
               onClick={toggleSidebar}
               className={`${isNavigationCollapsed ? "" : "ml-auto"} flex h-10 w-10 items-center justify-center rounded-full text-[#5e5650]/55 transition hover:bg-white/66 hover:text-[#091E37] active:text-[#091E37]`}
-              aria-label={isNavigationCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={
+                isNavigationCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
             >
-              {isNavigationCollapsed ? <PanelLeftOpen size={18} strokeWidth={1.8} /> : <PanelLeftClose size={18} strokeWidth={1.8} />}
+              {isNavigationCollapsed ? (
+                <PanelLeftOpen size={18} strokeWidth={1.8} />
+              ) : (
+                <PanelLeftClose size={18} strokeWidth={1.8} />
+              )}
             </button>
           </div>
 
@@ -235,7 +330,11 @@ export default function AdminLayout() {
             {filteredMenu.map((item) => {
               if (item.type === "dropdown") {
                 const Icon = item.icon;
-                const visibleSections = item.sections.filter((section) => !section.permission || permissions.includes(section.permission));
+                const visibleSections = item.sections.filter(
+                  (section) =>
+                    !section.permission ||
+                    permissions.includes(section.permission),
+                );
                 const isOpen = openDropdowns[item.key];
                 const isActive = activeDropdowns[item.key];
 
@@ -246,46 +345,79 @@ export default function AdminLayout() {
                       onClick={() => toggleDropdown(item.key)}
                       title={isNavigationCollapsed ? item.label : undefined}
                       className={`flex w-full items-center ${isNavigationCollapsed ? "justify-center rounded-[18px] px-0 py-2.5" : "justify-between gap-3 rounded-full px-4 py-2"} text-[12px] font-medium transition ${
-                        isActive ? "bg-[#091E37] text-white" : "text-slate-600 hover:bg-white/66 hover:text-slate-900"
+                        isActive
+                          ? "bg-[#091E37] text-white"
+                          : "text-slate-600 hover:bg-white/66 hover:text-slate-900"
                       }`}
                       style={{ fontSize: "12px", lineHeight: "1.2" }}
                     >
-                      <span className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
-                        <span className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}>
+                      <span
+                        className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}
+                      >
+                        <span
+                          className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}
+                        >
                           <Icon size={16} />
                         </span>
                         {!isNavigationCollapsed ? (
-                          <span className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ${isActive ? "text-white" : "text-slate-600"}`}>{item.label}</span>
+                          <span
+                            className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out ${isActive ? "text-white" : "text-slate-600"}`}
+                          >
+                            {item.label}
+                          </span>
                         ) : null}
                       </span>
-                      {!isNavigationCollapsed ? (isOpen ? <ChevronDown size={20} strokeWidth={1.5} /> : <ChevronRight size={20} strokeWidth={1.5} />) : null}
+                      {!isNavigationCollapsed ? (
+                        isOpen ? (
+                          <ChevronDown size={20} strokeWidth={1.5} />
+                        ) : (
+                          <ChevronRight size={20} strokeWidth={1.5} />
+                        )
+                      ) : null}
                     </button>
 
                     {!isNavigationCollapsed && isOpen ? (
                       <div className="relative ml-5 mt-3 space-y-2 pl-7 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-black/8">
                         {visibleSections.map((section) => {
-                          const isSectionOpen = openSections[item.key] === section.title;
-                          const isSectionActive = section.items.some((child) => childIsActive(location, child.to));
+                          const isSectionOpen =
+                            openSections[item.key] === section.title;
+                          const isSectionActive = section.items.some((child) =>
+                            childIsActive(location, child.to),
+                          );
 
                           return (
-                            <div key={section.title} className={`rounded-[22px] p-1 transition ${isSectionOpen || isSectionActive ? "bg-white/55" : "bg-transparent"}`}>
+                            <div
+                              key={section.title}
+                              className={`rounded-[22px] p-1 transition ${isSectionOpen || isSectionActive ? "bg-white/55" : "bg-transparent"}`}
+                            >
                               <button
                                 type="button"
-                                onClick={() => toggleSection(item.key, section.title)}
+                                onClick={() =>
+                                  toggleSection(item.key, section.title)
+                                }
                                 className={`flex w-full items-center justify-between gap-3 rounded-[18px] px-3 py-1.5 text-left text-[12px] font-semibold tracking-[0.02em] transition ${
-                                  isSectionActive ? "text-slate-900" : "text-slate-500 hover:bg-black/5 hover:text-slate-800"
+                                  isSectionActive
+                                    ? "text-slate-900"
+                                    : "text-slate-500 hover:bg-black/5 hover:text-slate-800"
                                 }`}
                                 style={{ fontSize: "12px", lineHeight: "1.2" }}
                               >
                                 <span>{section.title}</span>
-                                {isSectionOpen ? <ChevronDown size={18} strokeWidth={1.5} /> : <ChevronRight size={18} strokeWidth={1.5} />}
+                                {isSectionOpen ? (
+                                  <ChevronDown size={18} strokeWidth={1.5} />
+                                ) : (
+                                  <ChevronRight size={18} strokeWidth={1.5} />
+                                )}
                               </button>
 
                               {isSectionOpen ? (
                                 section.items.length ? (
                                   <div className="space-y-1 px-1 pb-1">
                                     {section.items.map((child) => {
-                                      const isChildActive = childIsActive(location, child.to);
+                                      const isChildActive = childIsActive(
+                                        location,
+                                        child.to,
+                                      );
                                       return (
                                         <NavLink
                                           key={child.to}
@@ -299,15 +431,23 @@ export default function AdminLayout() {
                                             }`
                                           }
                                         >
-                                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isChildActive ? "bg-[#091E37]" : "bg-black/12 group-hover:bg-black/30"}`} />
-                                          <span className={`text-[13px] ${isChildActive ? "text-slate-900" : "text-slate-400"}`}>{renderActionIcon(child.label)}</span>
+                                          <span
+                                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${isChildActive ? "bg-[#091E37]" : "bg-black/12 group-hover:bg-black/30"}`}
+                                          />
+                                          <span
+                                            className={`text-[13px] ${isChildActive ? "text-slate-900" : "text-slate-400"}`}
+                                          >
+                                            {renderActionIcon(child.label)}
+                                          </span>
                                           <span>{child.label}</span>
                                         </NavLink>
                                       );
                                     })}
                                   </div>
                                 ) : (
-                                  <p className="px-3 pb-2 text-xs text-slate-400">Catalogue coming soon.</p>
+                                  <p className="px-3 pb-2 text-xs text-slate-400">
+                                    Catalogue coming soon.
+                                  </p>
                                 )
                               ) : null}
                             </div>
@@ -332,11 +472,21 @@ export default function AdminLayout() {
                   style={{ fontSize: "12px", lineHeight: "1.2" }}
                 >
                   {({ isActive }) => (
-                    <span className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}>
+                    <span
+                      className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}
+                    >
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-full ${isActive ? "bg-white/12 text-white" : "bg-transparent text-slate-500"}`}
+                      >
                         <Icon size={16} />
                       </span>
-                      {!isNavigationCollapsed ? <span className={isActive ? "text-white" : "text-slate-600"}>{item.label}</span> : null}
+                      {!isNavigationCollapsed ? (
+                        <span
+                          className={isActive ? "text-white" : "text-slate-600"}
+                        >
+                          {item.label}
+                        </span>
+                      ) : null}
                     </span>
                   )}
                 </NavLink>
@@ -344,15 +494,28 @@ export default function AdminLayout() {
             })}
           </nav>
 
-          <div className={`mt-8 rounded-[32px] bg-white/78 p-2 transition-all duration-300 ease-out ${isNavigationCollapsed ? "mx-auto w-fit" : ""}`}>
-            <div className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}>
-              <button type="button" onClick={logout} className="app-button app-button-dark app-icon-button shrink-0" aria-label="Log out">
+          <div
+            className={`mt-8 rounded-[32px] bg-white/78 p-2 transition-all duration-300 ease-out ${isNavigationCollapsed ? "mx-auto w-fit" : ""}`}
+          >
+            <div
+              className={`flex items-center ${isNavigationCollapsed ? "justify-center" : "gap-3"}`}
+            >
+              <button
+                type="button"
+                onClick={logout}
+                className="app-button app-button-dark app-icon-button shrink-0"
+                aria-label="Log out"
+              >
                 <LogOut size={15} />
               </button>
               {!isNavigationCollapsed ? (
                 <div className="min-w-0 flex-1 overflow-hidden transition-[max-width,opacity] duration-300 ease-out">
-                  <p className="truncate text-sm font-semibold text-slate-900">{user?.full_name || "Workspace user"}</p>
-                  <p className="truncate text-xs text-slate-500">{user?.email || "Session active"}</p>
+                  <p className="truncate text-sm font-semibold text-slate-900">
+                    {user?.full_name || "Workspace user"}
+                  </p>
+                  <p className="truncate text-xs text-slate-500">
+                    {user?.email || "Session active"}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -362,14 +525,23 @@ export default function AdminLayout() {
         <main className="ml-[var(--sidebar-offset)] flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin-left] duration-300 ease-out">
           <header className="app-glass fixed left-[var(--sidebar-offset)] right-0 top-0 z-20 flex flex-row items-center justify-between gap-4 border-b border-slate-200/70 px-5 py-5 transition-[left] duration-300 ease-out lg:px-8">
             <div className="min-w-0">
-              <h2 className="truncate text-[1.28rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.55rem]">Cyber GRC Workspace</h2>
+              <h2 className="truncate text-[1.28rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.55rem]">
+                Cyber GRC Workspace
+              </h2>
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <div className="relative">
                 <button
                   type="button"
-                  style={{ backgroundColor: isNotificationsOpen ? "rgba(255, 255, 255, 0.96)" : "rgba(248, 244, 239, 0.82)", width: "3rem", height: "3rem", padding: 0 }}
+                  style={{
+                    backgroundColor: isNotificationsOpen
+                      ? "rgba(255, 255, 255, 0.96)"
+                      : "rgba(248, 244, 239, 0.82)",
+                    width: "3rem",
+                    height: "3rem",
+                    padding: 0,
+                  }}
                   onClick={() => setIsNotificationsOpen((current) => !current)}
                   className={`app-button app-icon-button text-slate-700 ${isNotificationsOpen ? "shadow-[0_14px_34px_rgba(15,23,42,0.08)]" : "app-button-soft"}`}
                   aria-label="Alerts"
@@ -381,14 +553,24 @@ export default function AdminLayout() {
                   <div className="app-glass absolute right-0 z-20 mt-3 w-[380px] rounded-[18px] bg-white/94 p-4 shadow-[0_18px_48px_rgba(15,23,42,0.12)]">
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-slate-900">Recent coordination alerts</h3>
-                        <p className="mt-1 text-xs text-slate-500">Realtime updates from workflows, reviews, and delivery milestones.</p>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          Recent coordination alerts
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Realtime updates from workflows, reviews, and delivery
+                          milestones.
+                        </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsNotificationsOpen(false)}
                         className="app-button text-slate-500 hover:text-slate-700"
-                        style={{ width: "2.1rem", height: "2.1rem", padding: 0, backgroundColor: "rgba(255, 255, 255, 0.88)" }}
+                        style={{
+                          width: "2.1rem",
+                          height: "2.1rem",
+                          padding: 0,
+                          backgroundColor: "rgba(255, 255, 255, 0.88)",
+                        }}
                         aria-label="Close notifications"
                       >
                         <FiX size={13} />
@@ -398,13 +580,23 @@ export default function AdminLayout() {
                     <div className="app-scroll max-h-[360px] space-y-2 overflow-y-auto pr-1">
                       {visibleNotifications.length ? (
                         visibleNotifications.map((item) => (
-                          <article key={item.id} className="rounded-[16px] bg-white/90 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                            <p className="text-sm font-medium text-slate-800">{item.message}</p>
-                            <p className="mt-1 text-xs text-slate-500">{formatNotificationDate(item.receivedAt)}</p>
+                          <article
+                            key={item.id}
+                            className="rounded-[16px] bg-white/90 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+                          >
+                            <p className="text-sm font-medium text-slate-800">
+                              {item.message}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {formatNotificationDate(item.receivedAt)}
+                            </p>
                           </article>
                         ))
                       ) : (
-                        <div className="rounded-[16px] bg-white/88 px-4 py-7 text-center text-[13px] font-medium leading-5 text-[#2c2824]/68">No realtime alerts yet. Workflow and deadline notifications will appear here.</div>
+                        <div className="rounded-[16px] bg-white/88 px-4 py-7 text-center text-[13px] font-medium leading-5 text-[#2c2824]/68">
+                          No realtime alerts yet. Workflow and deadline
+                          notifications will appear here.
+                        </div>
                       )}
                     </div>
                   </div>
@@ -414,15 +606,32 @@ export default function AdminLayout() {
               <button
                 type="button"
                 onClick={openSettings}
-                style={{ backgroundColor: isSettingsRoute ? "rgba(255, 255, 255, 0.96)" : "rgba(248, 244, 239, 0.82)", width: "3rem", height: "3rem", padding: 0 }}
+                style={{
+                  backgroundColor: isSettingsRoute
+                    ? "rgba(255, 255, 255, 0.96)"
+                    : "rgba(248, 244, 239, 0.82)",
+                  width: "3rem",
+                  height: "3rem",
+                  padding: 0,
+                }}
                 className={`app-button app-icon-button relative text-slate-600 ${isSettingsRoute ? "shadow-[0_14px_34px_rgba(15,23,42,0.08)]" : "app-button-soft"}`}
                 aria-label="Settings"
               >
                 <Settings size={20} strokeWidth={1.9} />
-                {!isSettingsRoute ? <span className="absolute right-3.5 top-3.5 h-1.5 w-1.5 rounded-full bg-[#fc8158]" aria-hidden="true" /> : null}
+                {!isSettingsRoute ? (
+                  <span
+                    className="absolute right-3.5 top-3.5 h-1.5 w-1.5 rounded-full bg-[#fc8158]"
+                    aria-hidden="true"
+                  />
+                ) : null}
               </button>
 
-              <button type="button" onClick={handleQuickAdd} disabled={!quickAddTarget} className="app-button app-button-dark hidden min-w-[128px] disabled:cursor-not-allowed disabled:opacity-50 sm:inline-flex">
+              <button
+                type="button"
+                onClick={handleQuickAdd}
+                disabled={!quickAddTarget}
+                className="app-button app-button-dark hidden min-w-[128px] disabled:cursor-not-allowed disabled:opacity-50 sm:inline-flex"
+              >
                 Quick add
               </button>
             </div>
