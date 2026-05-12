@@ -71,7 +71,7 @@ export default function MenuSelect({
         <div
           role="listbox"
           aria-label={ariaLabel}
-          className={`absolute left-0 z-30 min-w-full overflow-y-auto rounded-[10px] border border-black/10 bg-[#fffdfa] p-1.5 shadow-[0_14px_28px_rgba(17,17,17,0.06)] ${menuPlacementClass} ${menuClassName}`.trim()}
+          className={`absolute left-0 z-30 min-w-full overflow-y-auto rounded-[10px] border border-black/10 bg-[#fbfcfe] p-1.5 shadow-[0_14px_28px_rgba(17,17,17,0.06)] ${menuPlacementClass} ${menuClassName}`.trim()}
         >
           {normalizedOptions.map((option) => {
             const isActive = String(option.value) === String(value);

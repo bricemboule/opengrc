@@ -870,13 +870,13 @@ export default function OperationalReportView({
           <div className="mt-4 space-y-2 pr-5">
             {highlights.length ? (
               highlights.map((item) => (
-                <article key={`${item.title}-${item.meta}`} className="rounded-[16px] bg-white/82 px-4 py-4">
+                <article key={`${item.title}-${item.meta}`} className="rounded-[16px] bg-white/94 px-4 py-4 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
                   <p className="text-sm font-semibold text-slate-900">{item.title}</p>
                   <p className="mt-1 text-xs text-[#5e5650]">{item.meta}</p>
                 </article>
               ))
             ) : (
-              <div className="rounded-[16px] bg-white/58 px-4 py-8 text-center text-sm text-[#5e5650]">No highlighted items for this report.</div>
+              <div className="rounded-[16px] bg-white/88 px-4 py-8 text-center text-sm text-[#5e5650]">No highlighted items for this report.</div>
             )}
           </div>
         </div>

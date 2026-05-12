@@ -381,7 +381,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
     }
 
     return (
-      <label className={`ml-3 flex items-center gap-3 rounded-[99px] bg-white/74 px-4 py-4 ${isWide ? "md:col-span-2" : ""}`}>
+      <label className={`ml-3 flex items-center gap-3 rounded-[99px] bg-white/94 px-4 py-4 ${isWide ? "md:col-span-2" : ""}`}>
         <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(field.name, event.target.checked)} className="h-4 w-4 rounded accent-[#091E37]" />
         <span className="text-sm text-slate-700">{label}</span>
       </label>
@@ -443,7 +443,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                       onClick={(event) => event.stopPropagation()}
                       onMouseDown={(event) => event.stopPropagation()}
                       placeholder={`Search ${label.toLowerCase()}...`}
-                      className="h-10 w-full rounded-[14px] bg-[#f7f5f1] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                      className="h-10 w-full rounded-[14px] bg-[#f3f7fb] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
                     />
                   </div>
                 </div>
@@ -491,7 +491,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                   key={`${field.name}-selected-${selectedValue}`}
                   type="button"
                   onClick={() => onChange(field.name, toggleArrayValue(value, selectedValue))}
-                  className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-2 text-[0.8rem] font-medium text-black shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f8f6f2]"
+                  className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-2 text-[0.8rem] font-medium text-black shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f3f7fb]"
                   title={selectedChoiceLabel}
                 >
                   <span className="truncate">{selectedChoiceLabel}</span>
@@ -561,7 +561,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                       onClick={(event) => event.stopPropagation()}
                       onMouseDown={(event) => event.stopPropagation()}
                       placeholder={`Search ${label.toLowerCase()}...`}
-                      className="h-10 w-full rounded-[14px] bg-[#f7f5f1] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                      className="h-10 w-full rounded-[14px] bg-[#f3f7fb] pl-9 pr-3 text-sm text-black placeholder:text-black/34 outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
                     />
                   </div>
                 </div>
@@ -769,7 +769,7 @@ export default function CrudField({ field, value, error, onChange, appearance = 
                       onClick={() => setIsTimePickerOpen((open) => !open)}
                       aria-haspopup="listbox"
                       aria-expanded={isTimePickerOpen}
-                      className="flex h-11 w-full items-center justify-between rounded-[99px] bg-[#f7f5f1] pl-11 pr-3 text-[0.84rem] font-medium text-black outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f7f5f1] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
+                      className="flex h-11 w-full items-center justify-between rounded-[99px] bg-[#f3f7fb] pl-11 pr-3 text-[0.84rem] font-medium text-black outline-none shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)] transition hover:bg-[#f3f7fb] focus:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.1)]"
                     >
                       <span>{selectedTimeValue}</span>
                       <span className="flex h-7 w-7 items-center justify-center rounded-full text-black/44 transition hover:bg-black/[0.05] hover:text-black/68">

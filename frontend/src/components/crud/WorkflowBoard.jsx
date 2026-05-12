@@ -284,7 +284,7 @@ export default function WorkflowBoard({
           {summary.map((item, index) => {
             const tone = getLaneTone(index);
             return (
-              <article key={item.label} className="rounded-[18px] border border-black/6 bg-white/84 px-4 py-4">
+              <article key={item.label} className="rounded-[18px] border border-black/6 bg-white/94 px-4 py-4 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
@@ -437,7 +437,7 @@ export default function WorkflowBoard({
                       );
                     })
                   ) : (
-                    <div className={`rounded-[16px] border border-dashed border-black/10 px-4 py-10 text-center text-sm text-slate-500 ${isDropActive ? tone.accentSoft : "bg-white/58"}`}>
+                    <div className={`rounded-[16px] border border-dashed border-black/10 px-4 py-10 text-center text-sm text-slate-500 ${isDropActive ? tone.accentSoft : "bg-white/88"}`}>
                       {isDropActive ? "Drop here to move the record into this stage." : "No records in this stage yet."}
                     </div>
                   )}

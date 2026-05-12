@@ -105,7 +105,7 @@ function getStatusTone(status) {
     case "reviewed":
     case "mitigated":
     case "monitored":
-      return { badge: "bg-[#f2f0ec] text-[#6f685f]", dot: "bg-[#a9a195]" };
+      return { badge: "bg-[#eef3f8] text-[#536171]", dot: "bg-[#8d9bad]" };
     case "in_progress":
     case "planned":
     case "ongoing":
@@ -128,13 +128,13 @@ function getStatusTone(status) {
     case "prepared":
     case "new":
     case "monitoring":
-      return { badge: "bg-[#f5efe9] text-[#8a6d59]", dot: "bg-[#d0a586]" };
+      return { badge: "bg-[#f3f6f9] text-[#687483]", dot: "bg-[#aab5c3]" };
     case "in_review":
     case "submitted":
     case "pending":
     case "assessing":
     case "changes_requested":
-      return { badge: "bg-[#f3eef1] text-[#7f6975]", dot: "bg-[#bc9dad]" };
+      return { badge: "bg-[#f1f4f8] text-[#657186]", dot: "bg-[#9caabd]" };
     case "missed":
     case "blocked":
     case "non_conformant":
@@ -142,7 +142,7 @@ function getStatusTone(status) {
     case "expired":
     case "declined":
     case "revoked":
-      return { badge: "bg-[#f8ece9] text-[#8b5f56]", dot: "bg-[#d2a29a]" };
+      return { badge: "bg-[#f5f1f1] text-[#806565]", dot: "bg-[#c2a5a5]" };
     case "archived":
     case "inactive":
     case "cancelled":
@@ -152,9 +152,9 @@ function getStatusTone(status) {
     case "maintenance":
     case "skipped":
     case "overdue":
-      return { badge: "bg-[#f1f0ef] text-[#76716a]", dot: "bg-[#b2aca4]" };
+      return { badge: "bg-[#eef1f4] text-[#6f7780]", dot: "bg-[#a6afb8]" };
     default:
-      return { badge: "bg-[#f2f1ef] text-[#7a746d]", dot: "bg-[#b8b0a8]" };
+      return { badge: "bg-[#f2f5f8] text-[#6d7680]", dot: "bg-[#adb6bf]" };
   }
 }
 
@@ -213,7 +213,7 @@ function SelectionControl({ checked = false, mixed = false, onToggle, label }) {
       aria-label={label}
       onClick={onToggle}
       className={`flex h-5 w-5 items-center justify-center rounded-[7px] transition ${
-        checked || mixed ? "bg-[#091E37] text-white" : "border border-black/8 bg-transparent text-transparent hover:border-black/14 hover:bg-white/40"
+        checked || mixed ? "bg-[#091E37] text-white" : "border border-[#dce5ee] bg-[#f8fafc] text-transparent hover:border-[#c7d4e1] hover:bg-white"
       }`}
     >
       {mixed ? <Minus size={11} strokeWidth={1.9} /> : checked ? <Check size={11} strokeWidth={1.9} /> : null}
@@ -241,7 +241,7 @@ export default function DataTable({ columns, rows = [], rowActions, variant = "d
       : "w-full min-w-[760px] border-separate border-spacing-y-[0.16rem] text-[14px]";
   const tableStyle = { fontFamily: "var(--app-table-font)" };
   const headerRowClassName = "text-left text-[13px] tracking-[0.01em] text-[#091E37]";
-  const headerCellBaseClassName = isReportVariant ? "bg-[#f0eded] px-3.5 py-[14px] font-semibold" : "bg-[#f0eded] px-4 py-[18px] font-semibold";
+  const headerCellBaseClassName = isReportVariant ? "bg-[#edf2f7] px-3.5 py-[14px] font-semibold" : "bg-[#edf2f7] px-4 py-[18px] font-semibold";
   const bodyRowClassName = "text-[#091E37]";
   const bodyCellBaseClassName = isReportVariant ? "px-3.5 py-3 align-middle" : "px-4 py-3.5 align-middle";
   const headerRadiusClassName = isReportVariant ? "rounded-[8px]" : "rounded-[14px]";
@@ -301,7 +301,7 @@ export default function DataTable({ columns, rows = [], rowActions, variant = "d
           {rows.map((row, rowIndex) => {
             const rowId = resolveRowId(row, rowIndex, getRowId);
             const isSelected = selectedSet.has(rowId);
-            const bodySurfaceClassName = showSelection ? (isSelected ? "bg-white/82" : "bg-transparent") : "bg-white/82";
+            const bodySurfaceClassName = showSelection ? (isSelected ? "bg-white/94" : "bg-transparent") : "bg-white/94";
 
             return (
               <tr key={rowId} className={bodyRowClassName}>

@@ -83,7 +83,7 @@ function QueueList({ title, subtitle, items, renderMeta, emptyTitle = "No items"
           items.map((item, index) => {
             const heading = item.title || item.name || item.message || `Item ${index + 1}`;
             return (
-              <article key={`${title}-${item.id || heading}-${index}`} className="rounded-[12px] bg-white/82 px-4 py-4">
+              <article key={`${title}-${item.id || heading}-${index}`} className="rounded-[12px] bg-white/94 px-4 py-4 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
                 <div className="flex items-start gap-3">
                   <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${LIST_TONES[index % LIST_TONES.length]}`} />
                   <div>
@@ -124,7 +124,7 @@ function WorkflowMatrix({ items }) {
           <thead>
             <tr className="text-left text-[12px] tracking-[0.04em] text-[#5e5650]">
               {["Workflow", "Focus", "Volume", "Status split", "Open"].map((label, index) => (
-                <th key={label} className={`bg-white/56 px-4 py-3 font-semibold ${index === 0 ? "rounded-l-[12px]" : ""} ${index === 4 ? "rounded-r-[12px] text-left" : ""}`}>
+                <th key={label} className={`bg-white/88 px-4 py-3 font-semibold ${index === 0 ? "rounded-l-[12px]" : ""} ${index === 4 ? "rounded-r-[12px] text-left" : ""}`}>
                   {label}
                 </th>
               ))}
@@ -137,15 +137,15 @@ function WorkflowMatrix({ items }) {
               const previewStatuses = sortedStatuses.slice(0, 3);
               return (
                 <tr key={item.name}>
-                  <td className="rounded-l-[14px] bg-white/82 px-4 py-4 align-top">
+                  <td className="rounded-l-[14px] bg-white/94 px-4 py-4 align-top">
                     <p className="text-sm font-semibold text-slate-900">{item.name}</p>
                     <p className="mt-1 text-xs text-[#5e5650]">Operational module</p>
                   </td>
-                  <td className="bg-white/82 px-4 py-4 align-top text-sm text-[#5e5650]">
+                  <td className="bg-white/94 px-4 py-4 align-top text-sm text-[#5e5650]">
                     {focusStatus ? `${formatWorkflowLabel(focusStatus.label)}: ${focusStatus.total}` : "No active states"}
                   </td>
-                  <td className="bg-white/82 px-4 py-4 align-top text-sm font-semibold text-slate-900">{item.total}</td>
-                  <td className="bg-white/82 px-4 py-4 align-top">
+                  <td className="bg-white/94 px-4 py-4 align-top text-sm font-semibold text-slate-900">{item.total}</td>
+                  <td className="bg-white/94 px-4 py-4 align-top">
                     <div className="flex flex-wrap gap-2">
                       {previewStatuses.length ? (
                         previewStatuses.map((statusItem, index) => (
@@ -158,7 +158,7 @@ function WorkflowMatrix({ items }) {
                       )}
                     </div>
                   </td>
-                  <td className="rounded-r-[14px] bg-white/82 px-4 py-4 align-top text-left">
+                  <td className="rounded-r-[14px] bg-white/94 px-4 py-4 align-top text-left">
                     <div className="flex justify-start">
                       <a href={`/modules/${item.route}?mode=workflow`} className="app-button app-button-dark app-button-sm">
                         Open workflow
@@ -205,7 +205,7 @@ function DistributionDonut({ items }) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div className="space-y-3">
             {visibleItems.map((item, index) => (
-              <div key={`${item.label}-${index}`} className="flex items-center gap-3 rounded-[14px] bg-white/82 px-4 py-3">
+              <div key={`${item.label}-${index}`} className="flex items-center gap-3 rounded-[14px] bg-white/94 px-4 py-3 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }} />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[#5e5650]">{item.label}</p>
@@ -216,7 +216,7 @@ function DistributionDonut({ items }) {
           </div>
 
           <div className="mx-auto grid h-[250px] w-[250px] place-items-center rounded-full" style={{ background: buildDonutBackground(visibleItems) }}>
-            <div className="grid h-[138px] w-[138px] place-items-center rounded-full bg-white/92 text-center">
+            <div className="grid h-[138px] w-[138px] place-items-center rounded-full bg-white/98 text-center">
               <p className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{total}</p>
               <p className="text-[10px] font-semibold tracking-[0.04em] text-[#5e5650]">Tracked levels</p>
             </div>

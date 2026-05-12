@@ -12,7 +12,11 @@ export default function DataToolbar({ search, setSearch, onRefresh, action, plac
           onChange={(event) => setSearch(event.target.value)}
           placeholder={placeholder}
           className="app-input app-input-search"
-          style={{ paddingLeft: "2.45rem" }}
+          style={{
+            paddingLeft: "2.45rem",
+            backgroundColor: "#ffffff",
+            boxShadow: "inset 0 0 0 1px rgba(9, 30, 55, 0.045), 0 10px 24px rgba(9, 30, 55, 0.025)",
+          }}
         />
       </div>
 

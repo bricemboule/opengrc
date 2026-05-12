@@ -164,7 +164,7 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {summary.map((item, index) => (
-            <article key={item.label} className="rounded-[18px] border border-black/6 bg-white/84 px-4 py-4">
+            <article key={item.label} className="rounded-[18px] border border-black/6 bg-white/94 px-4 py-4 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold text-slate-400">{item.label}</p>
@@ -194,7 +194,7 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
                   type="button"
                   onClick={() => setSelectedExecutionId(row.id)}
                   className={`w-full rounded-[16px] px-4 py-4 text-left transition ${
-                    isSelected ? "bg-[#f4efe9] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)]" : "bg-white/82 hover:bg-[#f9f5ef]"
+                    isSelected ? "bg-[#eef3f8] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.05)]" : "bg-white/94 hover:bg-[#f3f7fb]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -257,28 +257,28 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
               </div>
 
               <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                <article className="rounded-[16px] bg-white/94 px-4 py-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                     <Clock3 size={13} />
                     Target completion
                   </div>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(selectedExecution.target_completion_at) || "Not set"}</p>
                 </article>
-                <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                <article className="rounded-[16px] bg-white/94 px-4 py-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                     <PlayCircle size={13} />
                     Started
                   </div>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(selectedExecution.started_at) || "Not started"}</p>
                 </article>
-                <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                <article className="rounded-[16px] bg-white/94 px-4 py-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                     <CheckCircle2 size={13} />
                     Completed
                   </div>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(selectedExecution.completed_at) || "Open"}</p>
                 </article>
-                <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                <article className="rounded-[16px] bg-white/94 px-4 py-4">
                   <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                     <AlertCircle size={13} />
                     Next action
@@ -290,13 +290,13 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
               {selectedExecution.summary || selectedExecution.outcome_summary || selectedExecution.blocker_summary ? (
                 <div className="mt-5 grid gap-3 xl:grid-cols-3">
                   {selectedExecution.summary ? (
-                    <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                    <article className="rounded-[16px] bg-white/94 px-4 py-4">
                       <p className="text-[11px] font-semibold text-[#554d46]">Execution summary</p>
                       <p className="mt-2 text-sm leading-6 text-[#5e5650]">{selectedExecution.summary}</p>
                     </article>
                   ) : null}
                   {selectedExecution.outcome_summary ? (
-                    <article className="rounded-[16px] bg-white/84 px-4 py-4">
+                    <article className="rounded-[16px] bg-white/94 px-4 py-4">
                       <p className="text-[11px] font-semibold text-[#554d46]">Outcome</p>
                       <p className="mt-2 text-sm leading-6 text-[#5e5650]">{selectedExecution.outcome_summary}</p>
                     </article>
@@ -342,7 +342,7 @@ export default function SopExecutionView({ rows = [], workflowChoices = [], onEd
                           <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${getStatusTone(step.status)}`}>
                             {formatLabel(step.status)}
                           </span>
-                          <span className="rounded-full bg-[#f7f5f1] px-2.5 py-1 text-[10px] font-medium text-[#5f5750]">
+                          <span className="rounded-full bg-[#f3f7fb] px-2.5 py-1 text-[10px] font-medium text-[#5f5750]">
                             {formatLabel(step.step_type)}
                           </span>
                           {step.is_required ? (

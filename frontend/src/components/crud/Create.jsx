@@ -149,7 +149,7 @@ export default function Create({ title, description, fields, values, errors, onC
     <section className="mb-6 space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex items-start gap-3.5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white/84 text-[#091E37]">{editorialPresentation.icon || <span className="text-lg font-semibold">01</span>}</span>
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white/94 text-[#091E37] shadow-[0_10px_24px_rgba(9,30,55,0.035)]">{editorialPresentation.icon || <span className="text-lg font-semibold">01</span>}</span>
 
           <div className="space-y-1">
             {editorialPresentation.eyebrow ? <span className="text-[12px] font-semibold text-black/42">{editorialPresentation.eyebrow}</span> : null}
@@ -169,7 +169,7 @@ export default function Create({ title, description, fields, values, errors, onC
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.02fr)_320px]">
-        <article className="rounded-[25px] bg-[rgba(255,255,255,0.64)] px-6 py-6 sm:px-7 shadow-2xl shadow-black/[0.04]">
+        <article className="rounded-[25px] bg-[rgba(255,255,255,0.94)] px-6 py-6 sm:px-7 shadow-[0_18px_44px_rgba(9,30,55,0.045)]">
           {/* <article className="rounded-[25px] bg-[#f0eded] px-6 py-6 sm:px-7"> */}
           <div className="mb-7 space-y-4">
             {/* <div className="flex flex-wrap gap-2">
@@ -223,13 +223,13 @@ export default function Create({ title, description, fields, values, errors, onC
         </article>
 
         <aside className="space-y-4">
-          <div className="rounded-[20px] bg-[linear-gradient(160deg,rgba(255,255,255,0.78),rgba(247,244,239,0.94))] px-5 py-5">
+          <div className="rounded-[20px] bg-[linear-gradient(160deg,rgba(255,255,255,0.96),rgba(250,252,254,0.94))] px-5 py-5 shadow-[0_14px_34px_rgba(9,30,55,0.035)]">
             <span className="text-[12px] font-semibold text-black/40">Overview</span>
             <h3 className="mt-3 text-[1.12rem] font-semibold text-black">{editorialPresentation.sidePanel?.title || "Form context"}</h3>
             <p className="mt-2 text-sm leading-6 text-black/56">{editorialPresentation.sidePanel?.description || description}</p>
           </div>
 
-          <div className="rounded-[20px] bg-white/62 px-5 py-5">
+          <div className="rounded-[20px] bg-white/90 px-5 py-5 shadow-[0_14px_34px_rgba(9,30,55,0.035)]">
             <div className="flex items-center justify-between">
               <strong className="text-[0.96rem] font-semibold text-black">Structure</strong>
               <span className="text-sm text-black/42">{sections.length}</span>
@@ -249,7 +249,7 @@ export default function Create({ title, description, fields, values, errors, onC
           </div>
 
           {/* {keyFieldLabels.length ? (
-            <div className="rounded-[26px] bg-white/58 px-5 py-5">
+            <div className="rounded-[26px] bg-white/88 px-5 py-5">
               <div className="flex items-center justify-between">
                 <strong className="text-[0.96rem] font-semibold text-black">Key fields</strong>
                 <span className="text-sm text-black/42">{keyFieldLabels.length}</span>
@@ -257,7 +257,7 @@ export default function Create({ title, description, fields, values, errors, onC
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {keyFieldLabels.map((label) => (
-                  <span key={label} className="rounded-full bg-white/84 px-3 py-1.5 text-[12px] font-medium text-black/76">
+                  <span key={label} className="rounded-full bg-white/94 px-3 py-1.5 text-[12px] font-medium text-black/76">
                     {label}
                   </span>
                 ))}
@@ -266,7 +266,7 @@ export default function Create({ title, description, fields, values, errors, onC
           ) : null} */}
 
           {highlights.length ? (
-            <div className="rounded-[20px] bg-white/58 px-5 py-5">
+            <div className="rounded-[20px] bg-white/88 px-5 py-5">
               <div className="flex items-center justify-between">
                 <strong className="text-[0.96rem] font-semibold text-black">Tips</strong>
                 <span className="text-sm text-black/42">{highlights.length}</span>

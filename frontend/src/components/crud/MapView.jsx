@@ -42,7 +42,7 @@ function getStatusTone(status) {
   if (["planned", "pending", "draft", "in_progress", "submitted", "requested", "approved", "mobilizing", "demobilizing", "staged", "returning", "identified", "analyzing", "validating", "prepared", "monitoring", "new"].some((token) => value.includes(token))) {
     return "bg-[#fff5e8] text-[#8d6c49]";
   }
-  return "bg-white/84 text-[#5f5750]";
+  return "bg-white/94 text-[#5f5750]";
 }
 
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -213,19 +213,19 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <div className="min-w-[150px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
+        <div className="min-w-[150px] rounded-[10px] bg-white/96 px-5 py-3 shadow-[0_8px_18px_rgba(9,30,55,0.04)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Geolocated</p>
           <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#091E37]">{points.length}</p>
         </div>
-        <div className="min-w-[150px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
+        <div className="min-w-[150px] rounded-[10px] bg-white/96 px-5 py-3 shadow-[0_8px_18px_rgba(9,30,55,0.04)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Results</p>
           <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-[#091E37]">{rows.length}</p>
         </div>
-        <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
+        <div className="min-w-[220px] rounded-[10px] bg-white/96 px-5 py-3 shadow-[0_8px_18px_rgba(9,30,55,0.04)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Focus</p>
           <p className="mt-1 text-sm font-semibold text-[#091E37]">{selectedPoint?.region || "Operational map"}</p>
         </div>
-        <div className="min-w-[220px] rounded-[10px] bg-white/88 px-5 py-3 shadow-[0_8px_18px_rgba(17,17,17,0.02)]">
+        <div className="min-w-[220px] rounded-[10px] bg-white/96 px-5 py-3 shadow-[0_8px_18px_rgba(9,30,55,0.04)]">
           <p className="text-[11px] font-semibold text-[#554d46]">Spatial mode</p>
           <p className="mt-1 text-sm font-semibold text-[#091E37]">{spatialSummary?.engine?.postgis ? "PostGIS enabled" : "Lat/Lng analysis"}</p>
         </div>
@@ -256,7 +256,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_360px]">
         <div className="overflow-hidden rounded-[20px]">
-          <div className="app-map-shell relative h-[540px] overflow-hidden rounded-[20px] bg-[#f9f4ee]">
+          <div className="app-map-shell relative h-[540px] overflow-hidden rounded-[20px] bg-[#eef3f8]">
             {points.length ? (
               <>
                 <MapContainer center={DEFAULT_CENTER} zoom={8} minZoom={5} maxZoom={18} zoomControl={false} scrollWheelZoom className="app-operations-map h-full w-full">
@@ -295,10 +295,10 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                   })}
                 </MapContainer>
 
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,235,214,0.32),transparent_28%),radial-gradient(circle_at_82%_14%,rgba(221,235,213,0.28),transparent_30%),radial-gradient(circle_at_52%_82%,rgba(225,223,245,0.22),transparent_28%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(9,30,55,0.075),transparent_28%),radial-gradient(circle_at_82%_14%,rgba(9,30,55,0.052),transparent_30%),radial-gradient(circle_at_52%_82%,rgba(9,30,55,0.045),transparent_28%)]" />
 
                 <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-wrap items-start justify-between gap-3">
-                  <div className="pointer-events-auto w-full max-w-[360px] rounded-[14px] bg-white/82 px-4 py-3 backdrop-blur-sm">
+                  <div className="pointer-events-auto w-full max-w-[360px] rounded-[14px] bg-white/94 px-4 py-3 shadow-[0_12px_30px_rgba(9,30,55,0.04)] backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                       <Crosshair size={14} className="text-[#091E37]" />
                       Infrastructure footprint
@@ -306,7 +306,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                     <p className="mt-1 text-[11px] leading-5 text-[#5e5650]">Grab the map to pan, use the wheel to zoom, or select a point to inspect its operational context.</p>
                   </div>
 
-                  <div className="pointer-events-auto w-full min-w-[220px] max-w-[280px] rounded-[14px] bg-white/82 px-4 py-3 backdrop-blur-sm sm:w-auto">
+                  <div className="pointer-events-auto w-full min-w-[220px] max-w-[280px] rounded-[14px] bg-white/94 px-4 py-3 shadow-[0_12px_30px_rgba(9,30,55,0.04)] backdrop-blur-sm sm:w-auto">
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-[#554d46]">
                       <Layers3 size={14} className="text-[#091E37]" />
                       Coverage
@@ -351,7 +351,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
               </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center p-8">
-                <div className="max-w-sm rounded-[18px] bg-white/78 px-6 py-6 text-center shadow-[0_18px_40px_rgba(17,17,17,0.08)]">
+                <div className="max-w-sm rounded-[18px] bg-white/94 px-6 py-6 text-center shadow-[0_18px_40px_rgba(9,30,55,0.06)]">
                   <MapPin size={20} className="mx-auto text-[#091E37]" />
                   <p className="mt-3 text-sm font-semibold text-[#091E37]">No mapped records yet</p>
                   <p className="mt-2 text-sm leading-6 text-[#5e5650]">This map will automatically populate once the infrastructure records carry coordinates.</p>
@@ -361,7 +361,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
           </div>
         </div>
 
-        <div className="flex h-[540px] flex-col rounded-[22px] bg-white/72 p-4">
+        <div className="flex h-[540px] flex-col rounded-[22px] bg-white/92 p-4 shadow-[0_18px_44px_rgba(9,30,55,0.04)]">
           <div className="border-b border-black/8 pb-3">
             <h3 className="text-sm font-semibold text-[#554d46]">Mapped points</h3>
             <p className="mt-1 text-[12px] leading-5 text-[#5e5650]">Infrastructure entries with coordinates and operational context.</p>
@@ -375,7 +375,7 @@ export default function MapView({ title, description, rows = [], endpoint = "", 
                     key={point.id}
                     type="button"
                     onClick={() => setSelectedPointId(point.id)}
-                    className={`w-full rounded-[16px] px-4 py-4 text-left transition ${isSelected ? "bg-[#f0eded33] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.06)]" : "bg-white/82 hover:bg-[#f9f5ef]"}`}
+                    className={`w-full rounded-[16px] px-4 py-4 text-left transition ${isSelected ? "bg-[#f0eded33] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.06)]" : "bg-white/94 hover:bg-[#f3f7fb]"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold text-[#091E37]">{point.name}</h4>

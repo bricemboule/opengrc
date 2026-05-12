@@ -325,7 +325,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
             <button
               type="button"
               onClick={() => setDisplayedMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/86 text-black/68 transition hover:bg-white hover:text-black"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/94 text-black/68 transition hover:bg-white hover:text-black"
             >
               <FiChevronLeft size={14} />
             </button>
@@ -335,7 +335,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
             <button
               type="button"
               onClick={() => setDisplayedMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/86 text-black/68 transition hover:bg-white hover:text-black"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/94 text-black/68 transition hover:bg-white hover:text-black"
             >
               <FiChevronRight size={14} />
             </button>
@@ -353,7 +353,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
                 {week.map((day) => (
                   <div
                     key={day.dayKey}
-                    className={`min-h-[46px] rounded-[12px] px-1.5 py-1.5 ${day.inCurrentMonth ? "bg-white/74" : "bg-white/38"}`}
+                    className={`min-h-[46px] rounded-[12px] px-1.5 py-1.5 ${day.inCurrentMonth ? "bg-white/94" : "bg-white/62"}`}
                     title={day.count ? `${day.count} consultation${day.count > 1 ? "s" : ""}` : "No consultations"}
                   >
                     <div className={`text-[11px] font-semibold ${day.isToday ? "text-black" : day.inCurrentMonth ? "text-black/72" : "text-black/24"}`}>{day.label}</div>
@@ -395,7 +395,7 @@ export default function ConsultationCalendarView({ rows = [] }) {
 
                   <div className="space-y-3">
                     {group.items.map((item) => (
-                      <article key={item.id} className="rounded-[18px] bg-white/82 px-4 py-4">
+                      <article key={item.id} className="rounded-[18px] bg-white/94 px-4 py-4 shadow-[0_10px_24px_rgba(9,30,55,0.03)]">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                           <div className="min-w-0 space-y-2">
                             <div className="flex flex-wrap items-center gap-2">

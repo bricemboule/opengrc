@@ -164,18 +164,18 @@ function getStakeholderStatusTone(status) {
     case "active":
     case "validated":
     case "completed":
-      return { badge: "bg-[#f2f0ec] text-[#6f685f]", dot: "bg-[#a9a195]" };
+      return { badge: "bg-[#eef3f8] text-[#536171]", dot: "bg-[#8d9bad]" };
     case "in_progress":
     case "planned":
-      return { badge: "bg-[#f5efe9] text-[#8a6d59]", dot: "bg-[#d0a586]" };
+      return { badge: "bg-[#f3f6f9] text-[#687483]", dot: "bg-[#aab5c3]" };
     case "in_review":
     case "submitted":
-      return { badge: "bg-[#f3eef1] text-[#7f6975]", dot: "bg-[#bc9dad]" };
+      return { badge: "bg-[#f1f4f8] text-[#657186]", dot: "bg-[#9caabd]" };
     case "archived":
-      return { badge: "bg-[#f1f0ef] text-[#76716a]", dot: "bg-[#b2aca4]" };
+      return { badge: "bg-[#eef1f4] text-[#6f7780]", dot: "bg-[#a6afb8]" };
     case "draft":
     default:
-      return { badge: "bg-[#f2f1ef] text-[#7a746d]", dot: "bg-[#b8b0a8]" };
+      return { badge: "bg-[#f2f5f8] text-[#6d7680]", dot: "bg-[#adb6bf]" };
   }
 }
 
@@ -931,7 +931,7 @@ export default function ModuleListPage({ moduleKey: routeModuleKey }) {
                         setEditingItem(row);
                         setFormErrors({});
                       }}
-                      className="inline-flex h-8 items-center rounded-full bg-[#f3efe8] px-3.5 text-[11px] font-semibold text-[#091E37] transition hover:bg-[#ece6dc]"
+                      className="inline-flex h-8 items-center rounded-full bg-[#edf3f8] px-3.5 text-[11px] font-semibold text-[#091E37] transition hover:bg-[#e3edf6]"
                     >
                       Open
                     </button>

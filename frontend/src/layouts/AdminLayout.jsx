@@ -537,7 +537,7 @@ export default function AdminLayout() {
                   style={{
                     backgroundColor: isNotificationsOpen
                       ? "rgba(255, 255, 255, 0.96)"
-                      : "rgba(248, 244, 239, 0.82)",
+                      : "rgba(255, 255, 255, 0.94)",
                     width: "3rem",
                     height: "3rem",
                     padding: 0,
@@ -609,7 +609,7 @@ export default function AdminLayout() {
                 style={{
                   backgroundColor: isSettingsRoute
                     ? "rgba(255, 255, 255, 0.96)"
-                    : "rgba(248, 244, 239, 0.82)",
+                    : "rgba(255, 255, 255, 0.94)",
                   width: "3rem",
                   height: "3rem",
                   padding: 0,

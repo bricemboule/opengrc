@@ -55,7 +55,7 @@ export default function Import({ title, description, fields, loading = false, on
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          <label className="flex cursor-pointer items-center justify-center gap-3 rounded-[32px] bg-white/72 px-6 py-10 text-sm font-medium text-slate-600 transition hover:bg-white">
+          <label className="flex cursor-pointer items-center justify-center gap-3 rounded-[32px] bg-white/94 px-6 py-10 text-sm font-medium text-slate-600 transition hover:bg-white">
             <FiUpload size={18} />
             <span>{fileName ? `Loaded file: ${fileName}` : "Choose a CSV file"}</span>
             <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
@@ -76,7 +76,7 @@ export default function Import({ title, description, fields, loading = false, on
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-[32px] bg-white/68 p-5">
+          <div className="rounded-[32px] bg-white/92 p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Recognized columns</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Headers can use API names such as <code className="rounded bg-white px-1 py-0.5 text-[13px]">organization</code> or the displayed labels.
@@ -90,18 +90,18 @@ export default function Import({ title, description, fields, loading = false, on
             </div>
           </div>
 
-          <div className="rounded-[32px] bg-white/68 p-5">
+          <div className="rounded-[32px] bg-white/92 p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Preview</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[24px] bg-white/78 px-4 py-4">
+              <div className="rounded-[24px] bg-white/94 px-4 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Rows ready</p>
                 <p className="mt-2 text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{dataset.records.length}</p>
               </div>
-              <div className="rounded-[24px] bg-white/78 px-4 py-4">
+              <div className="rounded-[24px] bg-white/94 px-4 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Matched</p>
                 <p className="mt-2 text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{dataset.matchedColumns.filter(Boolean).length}</p>
               </div>
-              <div className="rounded-[24px] bg-white/78 px-4 py-4">
+              <div className="rounded-[24px] bg-white/94 px-4 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Ignored</p>
                 <p className="mt-2 text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{dataset.unknownColumns.length}</p>
               </div>
@@ -115,7 +115,7 @@ export default function Import({ title, description, fields, loading = false, on
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-[0.16em] text-slate-400">
                       {dataset.headers.map((header, index) => (
-                        <th key={`${header}-${index}`} className={`bg-white/56 px-4 py-3 font-semibold ${index === 0 ? "rounded-l-full" : ""} ${index === dataset.headers.length - 1 ? "rounded-r-full" : ""}`}>
+                        <th key={`${header}-${index}`} className={`bg-white/88 px-4 py-3 font-semibold ${index === 0 ? "rounded-l-full" : ""} ${index === dataset.headers.length - 1 ? "rounded-r-full" : ""}`}>
                           {header}
                         </th>
                       ))}
@@ -127,7 +127,7 @@ export default function Import({ title, description, fields, loading = false, on
                         {dataset.headers.map((header, columnIndex) => {
                           const fieldName = dataset.matchedColumns[columnIndex];
                           return (
-                            <td key={`${header}-${rowIndex}`} className={`bg-white/82 px-4 py-4 text-slate-700 ${columnIndex === 0 ? "rounded-l-[22px]" : ""} ${columnIndex === dataset.headers.length - 1 ? "rounded-r-[22px]" : ""}`}>
+                            <td key={`${header}-${rowIndex}`} className={`bg-white/94 px-4 py-4 text-slate-700 ${columnIndex === 0 ? "rounded-l-[22px]" : ""} ${columnIndex === dataset.headers.length - 1 ? "rounded-r-[22px]" : ""}`}>
                               {fieldName ? record[fieldName] || "—" : "Ignore"}
                             </td>
                           );

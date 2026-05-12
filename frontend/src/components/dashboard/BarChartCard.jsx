@@ -65,7 +65,7 @@ export default function BarChartCard({ title, data = [], dataKey, xKey }) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center rounded-[18px] bg-white/64 text-sm text-[#5e5650]">
+          <div className="flex h-full items-center justify-center rounded-[18px] bg-white/92 text-sm text-[#5e5650]">
             No chart data available yet.
           </div>
         )}
