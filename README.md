@@ -142,18 +142,3 @@ cd backend
 pytest
 ```
 
-## Limitations de validation dans cet environnement
-
-Dans l'environnement de travail courant, les dependances Python et frontend n'etaient pas installees. J'ai donc pu:
-
-- compiler statiquement les modules Python modifies
-- ecrire les migrations manuellement
-
-Je n'ai pas pu executer ici:
-
-- `python manage.py makemigrations`
-- `python manage.py migrate`
-- `pytest`
-- `npm run build`
-
-car `django` et `vite` n'etaient pas disponibles localement au moment de la verification.
