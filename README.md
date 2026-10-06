@@ -1,27 +1,3 @@
-# OpenGRC aligned with EDEN
-
-Application Django + React alignée sur les modules metier principaux de EDEN tout en conservant le design frontend existant.
-
-## Ce qui a ete aligne
-
-- Conservation du layout React existant, du menu, des composants CRUD et du style.
-- Correction du routage frontend des modules.
-- CRUD generique frontend pilote par les metadonnees DRF pour creation, modification et suppression.
-- Ajout des ressources EDEN manquantes:
-  - `org.sites`
-  - `org.facilities`
-  - `people.contacts`
-  - `people.identities`
-  - `projects.activities`
-  - `projects.tasks`
-- Ajout de validations metier minimales:
-  - coherence organisation/personne
-  - coherence organisation/projet
-  - coherence projet/activite
-  - controles sur les dates de validite et de fin
-- Ajout de migrations manuelles pour ces ressources.
-- Ajout d'un jeu de donnees de demonstration via `seed_demo`.
-
 ## Prerequis
 
 ### Option Docker
